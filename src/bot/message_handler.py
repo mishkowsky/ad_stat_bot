@@ -10,7 +10,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-
+from aiogram.dispatcher.filters.state import State
 from src.bot.keyboards import main_menu_keyboard, back_keyboard
 from src.dao.mock_mentions_db import Chat, Post, Mention, MentionsDatabase
 
@@ -26,12 +26,13 @@ db = MentionsDatabase(session=session)
 
 @dp.message_handler(commands="start", state="*")
 async def handle_start(message: types.Message, state: FSMContext):
-    await state.finish()
+
     await bot.send_message(message.from_user.id, text='👋 Привет! Я могу показать, какие товары рекламируют '
                                                       'твои любимые блогеры в Telegram, а также у каких блогеров брали'
                                                       ' рекламу твои топовые конкуренты.',
                            reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
-    user_from_db = session.query(User).filter(User.user_id == message.from_user.id).first()
+    from_user_id = str(message.from_user.id)
+    user_from_db = session.query(User).filter(User.user_id == from_user_id).first()
     if user_from_db is None:
         now = datetime.now()
         user = User(user_id=message.from_user.id, username=message.from_user.username,
@@ -39,6 +40,8 @@ async def handle_start(message: types.Message, state: FSMContext):
                     created_at=now)
         session.add(user)
         session.commit()
+    await state.finish()
+    await UserStates.MainMenuAfterBack.set()
 
 
 @dp.message_handler()
@@ -49,20 +52,29 @@ async def handle_plain_text(message: types.Message):
 
 @dp.callback_query_handler(lambda call: call.data == "back_to_main_menu", state="*")
 async def handle_back_to_main_menu(call: types.callback_query, state: FSMContext):
-    await state.finish()
     await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
                                 text=main_menu_text, reply_markup=main_menu_keyboard)
+    await set_new_state(state, UserStates.MainMenuAfterBack)
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_sku", state='*')
+check_sku_message: str = '✏️ <b>Отправь мне артикул</b>, по которому ты хочешь получить информацию.\n\n' \
+                         'Я отправлю тебе список каналов, которые упоминали данный товар!'
+
+
+@dp.callback_query_handler(lambda call: call.data == "check_sku", state=UserStates.MainMenuAfterResult)
 async def check_sku_call(call: types.callback_query, state: FSMContext):
-    await state.finish()
-    await bot.edit_message_text(text='✏️ <b>Отправь мне артикул</b>, по которому ты хочешь получить информацию.\n\n'
-                                     'Я отправлю тебе список каналов, которые рекламировали '
-                                     'данный товар!',
-                                message_id=call.message.message_id, chat_id=call.from_user.id,
+    await bot.send_message(text=check_sku_message, chat_id=call.from_user.id,
+                           reply_markup=back_keyboard, parse_mode='html')
+    await bot.edit_message_reply_markup(message_id=call.message.message_id,
+                                        chat_id=call.from_user.id, reply_markup=None)
+    await set_new_state(state, UserStates.EnterSKU)
+
+
+@dp.callback_query_handler(lambda call: call.data == "check_sku", state=UserStates.MainMenuAfterBack)
+async def check_sku_call(call: types.callback_query, state: FSMContext):
+    await bot.edit_message_text(text=check_sku_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
-    await UserStates.EnterSKU.set()
+    await set_new_state(state, UserStates.EnterSKU)
 
 
 @dp.message_handler(state=UserStates.EnterSKU)
@@ -84,6 +96,7 @@ async def handle_entered_sku(message: types.Message, state: FSMContext):
     else:
         text = get_text_for_sku_response(sku, mentions)
     await send_message_with_limit(message.from_user.id, text)
+    await UserStates.MainMenuAfterResult.set()
 
 
 def get_text_for_sku_response(sku, mentions):
@@ -99,7 +112,6 @@ def get_text_for_sku_response(sku, mentions):
         text += f'\n\n<i>{mentions_count_per_channel}</i> упоминани{mentions_ending} ' \
                 f'в канале <a href="{chat.link}">"{chat.title}"</a>:'
         for post in sorted_posts:
-            mention = posts[post][0]
             if len(posts[post]) > 1:
                 logger.warning('AAAAA')
             delimiter = ';' if post != sorted_posts[-1] else '.'
@@ -113,15 +125,29 @@ def get_text_for_sku_response(sku, mentions):
     return text
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_brand", state='*')
+check_brand_message: str = '✏️ <b>Отправь мне наименование бренда</b>, по которому ты хочешь получить информацию \n\n' \
+                           'Я отправлю тебе список каналов, в которых упоминались товары данного бренда!'
+
+
+@dp.callback_query_handler(lambda call: call.data == "check_brand", state=UserStates.MainMenuAfterResult)
 async def check_brand_call(call: types.callback_query, state: FSMContext):
-    await state.finish()
-    await bot.edit_message_text(text='✏️ <b>Отправь мне наименование бренда</b>, по которому ты хочешь получить '
-                                     'информацию \n\nЯ отправлю тебе список блогеров, которые '
-                                     'рекламировали данный бренд!',
-                                message_id=call.message.message_id, chat_id=call.from_user.id,
+    await bot.send_message(text=check_brand_message, chat_id=call.from_user.id,
+                           reply_markup=back_keyboard, parse_mode='html')
+    await bot.edit_message_reply_markup(message_id=call.message.message_id,
+                                        chat_id=call.from_user.id, reply_markup=None)
+    await set_new_state(state, UserStates.EnterBrand)
+
+
+@dp.callback_query_handler(lambda call: call.data == "check_brand", state=UserStates.MainMenuAfterBack)
+async def check_brand_call(call: types.callback_query, state: FSMContext):
+    await bot.edit_message_text(text=check_brand_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
-    await UserStates.EnterBrand.set()
+    await set_new_state(state, UserStates.EnterBrand)
+
+
+async def set_new_state(state_to_finish: FSMContext, state_to_set: State):
+    await state_to_finish.finish()
+    await state_to_set.set()
 
 
 @dp.message_handler(state=UserStates.EnterBrand)
@@ -139,7 +165,7 @@ async def handle_entered_brand(message: types.Message, state: FSMContext):
     else:
         text = get_text_for_brand_response(brand, mentions)
     await send_message_with_limit(message.from_user.id, text)
-    # await send_main_menu_message(message.from_user.id)
+    await UserStates.MainMenuAfterResult.set()
 
 
 def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: list[Mention]]]):
@@ -183,7 +209,8 @@ def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Mention]]
                 text += f'<a href="wb.ru/catalog/{sku_code}/detail.aspx">{sku_code}</a>{delimiter}'
     mentions_ending = 'е' if mentions_count == 1 else 'й'
     mentions_ending = 'я' if mentions_count in range(2, 5) else mentions_ending
-    text = f'\n<i>{mentions_count}</i> упоминани{mentions_ending} в канале <a href="{chat.link}">"{chat.title}"</a>:{text}'
+    text = f'\n<i>{mentions_count}</i> упоминани{mentions_ending} ' \
+           f'в канале <a href="{chat.link}">"{chat.title}"</a>:{text}'
     return text, mentions_count
 
 
