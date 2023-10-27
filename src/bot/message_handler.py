@@ -1,18 +1,18 @@
 import os
 from datetime import datetime
 from loguru import logger
-
-from src.dao.db_config import DB_CONFIG
-from src.dao.users_db import User, Request, RequestTypesEnum
+from src.dao.users_db import User, Request, RequestTypesEnum, RequestPlatformsEnum
 from aiogram.dispatcher import FSMContext
-
-from src.dao.mock_mentions_db import MentionsDatabase, Chat, Post, Mention
-from user_states import UserStates
-from keyboards import *
+from src.dao.db_config import DB_CONFIG
+from src.bot.user_states import UserStates
+from src.bot.keyboards import *
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+
+from src.bot.keyboards import main_menu_keyboard, back_keyboard
+from src.dao.mock_mentions_db import Chat, Post, Mention, MentionsDatabase
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
@@ -69,6 +69,7 @@ async def check_sku_call(call: types.callback_query, state: FSMContext):
 async def handle_entered_sku(message: types.Message, state: FSMContext):
     await state.finish()
     request = Request(user_id=message.from_user.id, request_type=RequestTypesEnum.sku,
+                      request_platform=RequestPlatformsEnum.telegram,
                       request=message.text, created_at=datetime.now())
     session.add(request)
     session.commit()
@@ -85,7 +86,7 @@ async def handle_entered_sku(message: types.Message, state: FSMContext):
     await send_message_with_limit(message.from_user.id, text)
 
 
-def get_text_for_sku_response(sku, mentions) -> str:
+def get_text_for_sku_response(sku, mentions):
     mentions_count = 0
     text = ''
     for chat, posts in mentions.items():
@@ -95,7 +96,7 @@ def get_text_for_sku_response(sku, mentions) -> str:
         mentions_ending = 'е' if mentions_count_per_channel == 1 else 'й'
         mentions_ending = 'я' if mentions_count_per_channel in range(2, 5) else mentions_ending
 
-        text += f'\n<i>{mentions_count_per_channel}</i> упоминани{mentions_ending} ' \
+        text += f'\n\n<i>{mentions_count_per_channel}</i> упоминани{mentions_ending} ' \
                 f'в канале <a href="{chat.link}">"{chat.title}"</a>:'
         for post in sorted_posts:
             mention = posts[post][0]
@@ -127,6 +128,7 @@ async def check_brand_call(call: types.callback_query, state: FSMContext):
 async def handle_entered_brand(message: types.Message, state: FSMContext):
     await state.finish()
     request = Request(user_id=message.from_user.id, request_type=RequestTypesEnum.brand,
+                      request_platform=RequestPlatformsEnum.telegram,
                       request=message.text, created_at=datetime.now())
     session.add(request)
     session.commit()
@@ -179,8 +181,20 @@ def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Mention]]
                 sku_code = mention.sku_code
                 delimiter = '; ' if mention != mentions[-1] else '.'
                 text += f'<a href="wb.ru/catalog/{sku_code}/detail.aspx">{sku_code}</a>{delimiter}'
-    text = f'<i>{mentions_count}</i> упоминаний в канале <a href="{chat.link}">"{chat.title}"</a>:{text}'
+    mentions_ending = 'е' if mentions_count == 1 else 'й'
+    mentions_ending = 'я' if mentions_count in range(2, 5) else mentions_ending
+    text = f'\n<i>{mentions_count}</i> упоминани{mentions_ending} в канале <a href="{chat.link}">"{chat.title}"</a>:{text}'
     return text, mentions_count
+
+
+def get_blogger_list_message(instagram_usernames_with_date_and_followers):
+    text = ''
+    for i, (instagram_username, date, followers) in enumerate(instagram_usernames_with_date_and_followers):
+        text = f'{text}{i + 1}. '
+        text = text + f'{date.strftime("%d.%m.%Y")} ' \
+                      f'<a href="instagram.com/{instagram_username}">{instagram_username}</a> ' \
+                      f'({followers} подписчиков)\n'
+    return text
 
 
 async def send_message_with_limit(user_id: int, text: str):
@@ -197,7 +211,7 @@ async def send_message_with_limit(user_id: int, text: str):
             if newline_index > start:
                 end = newline_index
         text_to_send = text[start:end + 1]
-        keyboard = back_to_main_menu_keyboard if end == text_len - 1 else None
+        keyboard = main_menu_keyboard if end == text_len - 1 else None
         await bot.send_message(user_id, text=text_to_send, reply_markup=keyboard, parse_mode='html',
                                disable_web_page_preview=True)
         sent_text_len = sent_text_len + end - start + 1
@@ -208,16 +222,3 @@ def find_index_of_nearest_newline(end_index: int, text: str) -> int:
     while end_index > 0 and text[end_index] != '\n':
         end_index = end_index - 1
     return end_index
-
-
-@dp.callback_query_handler(lambda call: call.data == 'send_main_menu', state='*')
-async def check_blogger_call(call: types.callback_query, state: FSMContext):
-    await state.finish()
-    await bot.edit_message_reply_markup(message_id=call.message.message_id,
-                                        chat_id=call.from_user.id, reply_markup=None)
-    await send_main_menu_message(call.from_user.id)
-
-
-async def send_main_menu_message(user_id):
-    await bot.send_message(user_id, text='Главное меню',
-                           reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
