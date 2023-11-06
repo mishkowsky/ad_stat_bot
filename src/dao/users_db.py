@@ -1,10 +1,10 @@
-
 import enum
-from sqlalchemy import Enum, create_engine, MetaData, Column, Integer, String, DateTime
+from datetime import datetime
+from sqlalchemy import Enum, MetaData, Column, Integer, String, DateTime, update
 from sqlalchemy.orm import declarative_base, Session
-from src.dao.db_config import DB_CONFIG
 
-metadata_obj = MetaData(schema='top_blogger_stat_bot')
+
+metadata_obj = MetaData(schema='ad_stat_bot')
 Base = declarative_base(metadata=metadata_obj)
 
 
@@ -44,11 +44,27 @@ class User(Base):
     created_at = Column(DateTime)
 
 
-if __name__ == '__main__':
-    engine = create_engine(DB_CONFIG.DB_URI, echo=False)
-    session = Session(bind=engine)
-    with session.begin():
-        Base.metadata.create_all(session.connection())
-        session.commit()
-    session.close()
-    engine.dispose()
+class UserDatabase:
+
+    def __init__(self, session: Session):
+        self.session = session
+
+    def check_user(self, user):
+        user_from_db = self.session.query(User).filter(User.user_id == str(user.user_id)).one_or_none()
+        if user_from_db is None:
+            self.session.add(user)
+            self.session.commit()
+
+    def add_new_user_request(self, request):
+        self.session.add(request)
+        self.session.commit()
+        self.update_user_last_interaction(request.user_id)
+
+    def update_user_last_interaction(self, user_id):
+        stmt = (
+            update(User).
+            where(User.user_id == str(user_id)).
+            values(last_interaction_date=datetime.now())
+        )
+        self.session.execute(stmt)
+        self.session.commit()
