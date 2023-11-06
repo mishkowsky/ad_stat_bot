@@ -5,6 +5,11 @@ from telethon.tl.functions.channels import JoinChannelRequest, GetFullChannelReq
 from telethon.tl.functions.messages import ImportChatInviteRequest, GetFullChatRequest
 from telethon.tl.types import Chat, Channel, ChatEmpty, Updates
 from telethon.utils import parse_username
+import requests
+from bs4 import BeautifulSoup
+import re
+
+from src.dao.mentions_db import ChatContentType
 
 
 async def get_list_of_chat_ids(client: TelegramClient) -> set[int]:
@@ -92,6 +97,32 @@ def get_chat_from_result(result):
     return joined_chat
 
 
-async def make_request(client, request):
+async def make_request(client: TelegramClient, request):
     result = await client(request)
     return result
+
+
+def get_chat_info_by_link(chat_link: str) -> (str, str):
+    try:
+        res = requests.get(f'https://{chat_link}')
+    except ConnectionError:
+        return get_chat_info_by_link(chat_link)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    try:
+        title = soup.find('div', {'class': 'tgme_page_title'}).find('span').text
+        followers_text = soup.find('div', {'class': 'tgme_page_extra'}).text.replace(' ', '')
+    except AttributeError:
+        return None, None
+    match_result = re.compile(r'^\d+').match(followers_text)
+    if match_result:
+        return title, match_result[0]
+    else:
+        return None, None
+
+
+def refactor_tg_url(url: str) -> str:
+    """
+    from telegram.me/some_link makes t.me/some_link
+    :param url: str link
+    """
+    return f't{url[8:]}' if url.startswith('telegram') else url
