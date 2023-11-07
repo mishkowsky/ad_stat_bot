@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import time
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
@@ -8,6 +9,7 @@ from opentele.api import API
 from opentele.tl import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.types import Chat, ChatEmpty, Channel
+from config import ROOT_DIR, THREAD_LOGGER_FORMAT
 from src.dao.mentions_db import TgChatsToParse
 from src.utils import format_message_to_print
 from .tg_utils import get_list_of_chat_ids, send_join_requests
@@ -34,6 +36,16 @@ class AbstractTgChatParser(ABC):
         self.total_message_counter: int = 0
         self.start_date: datetime = start_date
         self.processed_chats_id: set[int] = set()
+
+    def add_logger(self) -> None:
+        """
+        adds logger output to file
+        """
+        thread_id = threading.get_native_id()
+        output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/{self.session_id}/' \
+                          f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
+        logger.debug(f'ADDING LOGGER TO {output_log_file}')
+        logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
 
     async def parse(self, anon_path: str, api_id: int, api_hash: str, proxy_config: dict[str, str]) -> set:
         """
@@ -83,7 +95,9 @@ class AbstractTgChatParser(ABC):
         except FloodWaitError as e:
             self.time_to_sleep = e.seconds
 
-        self.chats.extend([await self.client.get_entity(tg_chat_ids)])
+        # from docs for get_entity method: "You can also pass a list or iterable of entities,
+        #                                   and they will be efficiently fetched from the network."
+        self.chats.extend(await self.client.get_entity(tg_chat_ids))
 
         self.chats_count = len(self.chats)
         await self.get_chats_info()

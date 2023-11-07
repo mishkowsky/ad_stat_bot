@@ -1,10 +1,8 @@
 import re
-import threading
-from datetime import datetime
-
+import requests
 from loguru import logger
-
-from config import ROOT_DIR, THREAD_LOGGER_FORMAT
+from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema
+from src.utils.wb_utils import get_sku_from_url, get_sku_from_text
 
 
 def format_message_to_print(message: str) -> str:
@@ -19,9 +17,29 @@ def format_message_to_print(message: str) -> str:
     return message_to_print
 
 
-def add_logger(self):
-    thread_id = threading.get_native_id()
-    output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/{self.session_id}/' \
-                      f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
-    logger.debug(f'ADDING LOGGER TO {output_log_file}')
-    logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
+def resolve_redirection_link(link: str) -> int | None:
+    """
+    resolves sku from link
+    :param link: link to resolve
+    :return: sku retrieved from link
+    """
+    logger.debug(f'RESOLVING {link}')
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/39.0.2171.95 Safari/537.36'
+    }
+    if not link.startswith('http'):
+        link = f'http://{link}'
+    try:
+        response = requests.get(link, timeout=15, headers=headers)
+    except (TimeoutError, InvalidURL, ConnectionError, MissingSchema, InvalidSchema) as e:
+        logger.warning(f'ERROR {e} ON URL: {link}')
+        return None
+    sku = get_sku_from_url(response.url)
+    if sku is not None:
+        return int(sku)
+    if len(response.history) != 0:
+        sku = get_sku_from_url(response.history[0].url)
+    if sku is not None:
+        return int(sku)
+    return get_sku_from_text(response.text)
