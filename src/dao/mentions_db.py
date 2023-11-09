@@ -1,9 +1,11 @@
-
 import enum
 from datetime import datetime
+from typing import Dict, List, Union, Any
+
 from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String, text, MetaData, Enum, \
-    orm, Float
-from sqlalchemy.orm import declarative_base, relationship
+    orm, Float, func
+from sqlalchemy.orm import declarative_base, relationship, Session
+
 metadata_obj = MetaData(schema='mentions')
 Base = declarative_base(metadata=metadata_obj)
 
@@ -147,3 +149,57 @@ class SkuPerPost(Base):
     def __repr__(self):
         return "<SkuPerPost(id='%s'; post_id='%s'; sku_code='%s')>" % \
             (self.id, self.post_id, self.sku_code)
+
+
+class MentionsDatabase:
+    """
+   Class to interact with parsers_bd.top_blogger_bot_schema
+   """
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get_mentions_by_sku(self, sku_code: int) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        method for obtaining a dictionary of mentions filtered by sku code
+        :param sku_code: sku to filter
+        :return: dict with mentions per posts per chats
+        """
+        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code == sku_code).all()
+        return self.generate_mentions_dict(mentions)
+
+    def get_mentions_by_brand(self, brand_name: str) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        method for obtaining a dictionary of mentions filtered by brand name
+        :param brand_name: string, case-insensitive
+        :return: dict with mentions per posts per chats
+        """
+        brand_id = self.session.query(Brand.brand_id).filter(func.lower(Brand.name) == brand_name).one_or_none()
+        if brand_id is None:
+            return {}
+        brand_skus = self.session.query(Sku.sku_code).filter(Sku.brand_id == brand_id[0]).all()
+        brand_skus_list = list(brand_sku[0] for brand_sku in brand_skus)
+        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code.in_(brand_skus_list)).all()
+        return self.generate_mentions_dict(mentions)
+
+    def generate_mentions_dict(self, mentions: list[SkuPerPost]) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        creates dict from orm objects
+        :param mentions: list of orm of SkuPerPost class
+        :return: dict with mentions per posts per chats
+        """
+        resulting_dict = dict()
+        for mention in mentions:
+            chat: TgChatsToParse = mention.post.chat
+            post: ParserResultTgPost = mention.post
+            if chat in resulting_dict.keys():
+                if post in resulting_dict[chat].keys():
+                    resulting_dict[chat][post].append(mention)
+                else:
+                    resulting_dict[chat][post] = [mention]
+            else:
+                resulting_dict[chat] = {post: [mention]}
+        return resulting_dict
