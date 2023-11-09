@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from loguru import logger
 from src.dao.users_db import User, Request, RequestTypesEnum, RequestPlatformsEnum
 from aiogram.dispatcher import FSMContext
 from src.dao.db_config import DB_CONFIG
@@ -10,7 +9,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from aiogram.dispatcher.filters.state import State
 from src.bot.keyboards import main_menu_keyboard, back_keyboard
 from src.dao.mock_mentions_db import Chat, Post, Mention, MentionsDatabase
 
@@ -22,26 +20,20 @@ engine = create_engine(DB_CONFIG.DB_URI, echo=False)
 session = Session(bind=engine)
 
 db = MentionsDatabase(session=session)
+user_db = UserDatabase(session)
 
 
 @dp.message_handler(commands="start", state="*")
 async def handle_start(message: types.Message, state: FSMContext):
-
-    await bot.send_message(message.from_user.id, text='👋 Привет! Я могу показать, какие товары рекламируют '
-                                                      'твои любимые блогеры в Telegram, а также у каких блогеров брали'
-                                                      ' рекламу твои топовые конкуренты.',
+    await bot.send_message(message.from_user.id, text='👋 Привет!\n\n🔥 Я могу показать, в каких Telegram каналах твои '
+                                                      'конкуренты закупают рекламу!\n\n⬇️ Нажимай на кнопку ниже и '
+                                                      'вводи артикул! Я выведу все каналы, в которых этот '
+                                                      'артикул упоминался!',
                            reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
-    from_user_id = str(message.from_user.id)
-    user_from_db = session.query(User).filter(User.user_id == from_user_id).first()
-    if user_from_db is None:
-        now = datetime.now()
-        user = User(user_id=message.from_user.id, username=message.from_user.username,
-                    first_name=message.from_user.first_name, last_name=message.from_user.last_name,
-                    created_at=now)
-        session.add(user)
-        session.commit()
+    user_db.check_user(User(user_id=str(message.from_user.id), username=message.from_user.username,
+                            first_name=message.from_user.first_name, last_name=message.from_user.last_name,
+                            created_at=datetime.now()))
     await state.finish()
-    await UserStates.MainMenuAfterBack.set()
 
 
 @dp.message_handler()
@@ -54,14 +46,18 @@ async def handle_plain_text(message: types.Message):
 async def handle_back_to_main_menu(call: types.callback_query, state: FSMContext):
     await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
                                 text=main_menu_text, reply_markup=main_menu_keyboard)
-    await set_new_state(state, UserStates.MainMenuAfterBack)
+    await state.finish()
 
 
-check_sku_message: str = '✏️ <b>Отправь мне артикул</b>, по которому ты хочешь получить информацию.\n\n' \
-                         'Я отправлю тебе список каналов, которые упоминали данный товар!'
+async def set_new_state(state_to_finish, state_to_set):
+    await state_to_finish.finish()
+    await state_to_set.set()
+
+check_sku_message = '✏️ <b>Отправь мне артикул</b>, по которому ты хочешь получить информацию.\n\n' \
+                    'Я отправлю тебе список каналов, которые рекламировали данный товар!'
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_sku", state=UserStates.MainMenuAfterResult)
+@dp.callback_query_handler(lambda call: call.data == "check_sku_res")
 async def check_sku_call(call: types.callback_query, state: FSMContext):
     await bot.send_message(text=check_sku_message, chat_id=call.from_user.id,
                            reply_markup=back_keyboard, parse_mode='html')
@@ -70,7 +66,7 @@ async def check_sku_call(call: types.callback_query, state: FSMContext):
     await set_new_state(state, UserStates.EnterSKU)
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_sku", state=UserStates.MainMenuAfterBack)
+@dp.callback_query_handler(lambda call: call.data == "check_sku")
 async def check_sku_call(call: types.callback_query, state: FSMContext):
     await bot.edit_message_text(text=check_sku_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
@@ -79,24 +75,22 @@ async def check_sku_call(call: types.callback_query, state: FSMContext):
 
 @dp.message_handler(state=UserStates.EnterSKU)
 async def handle_entered_sku(message: types.Message, state: FSMContext):
-    await state.finish()
     request = Request(user_id=message.from_user.id, request_type=RequestTypesEnum.sku,
                       request_platform=RequestPlatformsEnum.telegram,
                       request=message.text, created_at=datetime.now())
-    session.add(request)
-    session.commit()
+    user_db.add_new_user_request(request)
     sku = message.text.strip()
     if not sku.isdigit():
         await bot.send_message(message.from_user.id, text='Артикул должен быть числом.')
         await UserStates.EnterSKU.set()
         return
-    mentions = db.get_mentions_by_sku(int(sku))
+    mentions = db.get_mentions_by_sku(sku)
     if not mentions:
         text = f'Артикул <i>{sku}</i> не упоминался ни в одном канале.'
     else:
         text = get_text_for_sku_response(sku, mentions)
     await send_message_with_limit(message.from_user.id, text)
-    await UserStates.MainMenuAfterResult.set()
+    await state.finish()
 
 
 def get_text_for_sku_response(sku, mentions):
@@ -112,8 +106,6 @@ def get_text_for_sku_response(sku, mentions):
         text += f'\n\n<i>{mentions_count_per_channel}</i> упоминани{mentions_ending} ' \
                 f'в канале <a href="{chat.link}">"{chat.title}"</a>:'
         for post in sorted_posts:
-            if len(posts[post]) > 1:
-                logger.warning('AAAAA')
             delimiter = ';' if post != sorted_posts[-1] else '.'
             text += f'\n<a href="t.me/c/{chat.tg_id}/{post.message_id}">Пост</a> от {post.date}{delimiter}'
         mentions_count += mentions_count_per_channel
@@ -125,11 +117,11 @@ def get_text_for_sku_response(sku, mentions):
     return text
 
 
-check_brand_message: str = '✏️ <b>Отправь мне наименование бренда</b>, по которому ты хочешь получить информацию \n\n' \
-                           'Я отправлю тебе список каналов, в которых упоминались товары данного бренда!'
+check_brand_message = '✏️ <b>Отправь мне наименование бренда</b>, по которому ты хочешь получить информацию \n\n' \
+                      'Я отправлю тебе список блогеров, которые рекламировали данный бренд!'
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_brand", state=UserStates.MainMenuAfterResult)
+@dp.callback_query_handler(lambda call: call.data == "check_brand_res")
 async def check_brand_call(call: types.callback_query, state: FSMContext):
     await bot.send_message(text=check_brand_message, chat_id=call.from_user.id,
                            reply_markup=back_keyboard, parse_mode='html')
@@ -138,26 +130,19 @@ async def check_brand_call(call: types.callback_query, state: FSMContext):
     await set_new_state(state, UserStates.EnterBrand)
 
 
-@dp.callback_query_handler(lambda call: call.data == "check_brand", state=UserStates.MainMenuAfterBack)
+@dp.callback_query_handler(lambda call: call.data == "check_brand")
 async def check_brand_call(call: types.callback_query, state: FSMContext):
     await bot.edit_message_text(text=check_brand_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
     await set_new_state(state, UserStates.EnterBrand)
 
 
-async def set_new_state(state_to_finish: FSMContext, state_to_set: State):
-    await state_to_finish.finish()
-    await state_to_set.set()
-
-
 @dp.message_handler(state=UserStates.EnterBrand)
 async def handle_entered_brand(message: types.Message, state: FSMContext):
-    await state.finish()
     request = Request(user_id=message.from_user.id, request_type=RequestTypesEnum.brand,
                       request_platform=RequestPlatformsEnum.telegram,
                       request=message.text, created_at=datetime.now())
-    session.add(request)
-    session.commit()
+    user_db.add_new_user_request(request)
     brand = message.text.strip()
     mentions = db.get_mentions_by_brand(brand.lower())
     if not mentions:
@@ -165,10 +150,10 @@ async def handle_entered_brand(message: types.Message, state: FSMContext):
     else:
         text = get_text_for_brand_response(brand, mentions)
     await send_message_with_limit(message.from_user.id, text)
-    await UserStates.MainMenuAfterResult.set()
+    await state.finish()
 
 
-def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: list[Mention]]]):
+def get_text_for_brand_response(brand, mentions):
     mentions_count = 0
     text = ''
     for chat, posts in mentions.items():
@@ -183,13 +168,7 @@ def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: list
     return text
 
 
-def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Mention]]) -> tuple[str, int]:
-    """
-    Generates text response
-    :param chat: chat where Mentions where found
-    :param posts: dict with chats Posts as keys and list of Mentions in each Post as values
-    :return: generated text message, total mentions count
-    """
+def get_mentions_list_text_for_chat(chat, posts):
     text = ''
     sorted_posts = list(posts.keys())
     sorted_posts.sort(key=lambda p: p.date)
@@ -209,8 +188,8 @@ def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Mention]]
                 text += f'<a href="wb.ru/catalog/{sku_code}/detail.aspx">{sku_code}</a>{delimiter}'
     mentions_ending = 'е' if mentions_count == 1 else 'й'
     mentions_ending = 'я' if mentions_count in range(2, 5) else mentions_ending
-    text = f'\n<i>{mentions_count}</i> упоминани{mentions_ending} ' \
-           f'в канале <a href="{chat.link}">"{chat.title}"</a>:{text}'
+    text = f'\n<i>{mentions_count}</i> упоминани{mentions_ending} в канале ' \
+           f'<a href="{chat.link}">"{chat.title}"</a>:{text}'
     return text, mentions_count
 
 
@@ -224,7 +203,7 @@ def get_blogger_list_message(instagram_usernames_with_date_and_followers):
     return text
 
 
-async def send_message_with_limit(user_id: int, text: str):
+async def send_message_with_limit(user_id, text):
     message_limit = 4096
     text_len = len(text)
     sent_text_len = 0
@@ -238,14 +217,14 @@ async def send_message_with_limit(user_id: int, text: str):
             if newline_index > start:
                 end = newline_index
         text_to_send = text[start:end + 1]
-        keyboard = main_menu_keyboard if end == text_len - 1 else None
+        keyboard = main_menu_keyboard_after_res if end == text_len - 1 else None
         await bot.send_message(user_id, text=text_to_send, reply_markup=keyboard, parse_mode='html',
                                disable_web_page_preview=True)
         sent_text_len = sent_text_len + end - start + 1
         start = end + 1
 
 
-def find_index_of_nearest_newline(end_index: int, text: str) -> int:
+def find_index_of_nearest_newline(end_index, text):
     while end_index > 0 and text[end_index] != '\n':
         end_index = end_index - 1
     return end_index
