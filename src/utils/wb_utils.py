@@ -1,7 +1,6 @@
 import re
 import urllib.parse
 from dataclasses import dataclass
-
 import requests
 
 wb_sku_pattern = re.compile(r'\d{5,}')
