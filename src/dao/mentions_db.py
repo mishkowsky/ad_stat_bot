@@ -1,10 +1,11 @@
 import enum
 from datetime import datetime
+from loguru import logger
 from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String, text, MetaData, Enum, \
     orm, Float, func, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base, relationship, Session
-
+from src.parsers.tg_sku import TgWbItemsAdChatParser
 from src.utils.wb_utils import get_brands_by_skus, BrandRec
 
 metadata_obj = MetaData(schema='mentions')
@@ -166,6 +167,33 @@ class MentionsDatabase:
     def __init__(self, session: Session) -> None:
         self.session = session
 
+    def upload_wb_items_ad_parser_results(self, parser_result: TgWbItemsAdChatParser.Result) -> None:
+        """
+        :param parser_result: object type of TgWbItemsAdChatParserResult
+        """
+        for tg_chat in parser_result.tg_chats_to_update:
+            self.update_tg_chat(tg_chat)
+        self.upload_chats_to_db(parser_result.parsed_tg_chats)
+        self.upload_tg_posts_to_db(parser_result.parsed_posts, parser_result.parsed_skus)
+        self.session.commit()
+
+    def upload_chats_to_db(self, tg_chats: set[TgChatsToParse]) -> None:
+        """
+        Uploads tg_chats to db if db doesn't has entry with same tg_id or link
+        :param tg_chats: iterable with elements type of TgChatsToParse
+        """
+        uploaded_chats_counter = 0
+        if len(tg_chats) != 0:
+            for tg_chat in tg_chats:
+                if tg_chat.tg_id is not None:
+                    filter_condition = TgChatsToParse.tg_id == tg_chat.tg_id
+                else:
+                    filter_condition = TgChatsToParse.link == tg_chat.link
+                if self.session.query(TgChatsToParse).filter(filter_condition).one_or_none() is None:
+                    self.session.add(tg_chat)
+                    uploaded_chats_counter = uploaded_chats_counter + 1
+            logger.info(f'UPLOADED {uploaded_chats_counter} NEW CHATS')
+
     def get_mentions_by_sku(self, sku_code: int) -> \
             dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
         """
@@ -232,7 +260,7 @@ class MentionsDatabase:
             update(tg_chat_dict, synchronize_session=False)
         self.session.commit()
 
-    def upload_tg_posts_to_db(self, parsed_posts, parsed_skus):
+    def upload_tg_posts_to_db(self, parsed_posts: set[TgChatsToParse], parsed_skus: dict[int, Sku]) -> (int, int):
         brand_dict = get_brands_by_skus(list(parsed_skus.keys()))
 
         new_skus_counter = 0
