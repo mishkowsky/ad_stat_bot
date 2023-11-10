@@ -147,3 +147,34 @@ class SkuPerPost(Base):
     def __repr__(self):
         return "<SkuPerPost(id='%s'; post_id='%s'; sku_code='%s')>" % \
             (self.id, self.post_id, self.sku_code)
+
+
+class Proxy(Base):
+    __tablename__ = 'proxies'
+
+    id = Column(Integer,
+                Identity(start=1, increment=1, minvalue=1, maxvalue=2147483647, cycle=False, cache=1),
+                primary_key=True)
+    host = Column(String)
+    username = Column(String)
+    password = Column(String)
+    http_port = Column(Integer)
+    sock5_port = Column(Integer)
+
+    def get_http_dict(self):
+        http_url = f'http://{self.username}:{self.password}@{self.host}:{self.http_port}'
+        return {'http': http_url, 'https': http_url}
+
+    def get_http_config_dict(self):
+        return {
+            'proxy_type': 'http',       # (mandatory) protocol to use
+            'addr': self.host,          # (mandatory) proxy IP address
+            'port': self.http_port,     # (mandatory) proxy port number
+            'username': self.username,  # (optional) username if the proxy requires auth
+            'password': self.password,  # (optional) password if the proxy requires auth
+            'rdns': True                # (optional) whether to use remote or local resolve, default remote
+        }
+
+    def __repr__(self):
+        return "<Proxy(id='%s'; host='%s'; user='%s'; http='%s'; sock5='%s')>" % \
+            (self.id, self.host, self.username, self.http_port, self.sock5)
