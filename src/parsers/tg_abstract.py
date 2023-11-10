@@ -217,5 +217,5 @@ class AbstractTgChatParser(ABC):
         def merge_with(self, another_parser_result) -> None:
             self.tg_chats_to_update.extend(another_parser_result.tg_chats_to_update)
 
-    def get_parser_result(self) -> AbstractResult:
+    def get_parser_results(self) -> AbstractResult:
         raise NotImplemented
