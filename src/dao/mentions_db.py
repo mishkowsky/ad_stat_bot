@@ -1,9 +1,13 @@
-
 import enum
 from datetime import datetime
+from loguru import logger
 from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String, text, MetaData, Enum, \
-    orm, Float
-from sqlalchemy.orm import declarative_base, relationship
+    orm, Float, func, and_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import declarative_base, relationship, Session
+from src.parsers.tg_sku import TgWbItemsAdChatParser
+from src.utils.wb_utils import get_brands_by_skus, BrandRec
+
 metadata_obj = MetaData(schema='mentions')
 Base = declarative_base(metadata=metadata_obj)
 
@@ -128,6 +132,12 @@ class Sku(Base):
     brand = relationship('Brand', back_populates='sku')
     sku_per_post = relationship('SkuPerPost', back_populates='sku', cascade='merge')
 
+    def clean_sku_post(self) -> None:
+        for sku_per_post in self.sku_per_post:
+            post = sku_per_post.post
+            if post is not None:
+                post.sku_per_post.remove(sku_per_post)
+
     def __repr__(self):
         return "<Sku(id='%s'; sku_code='%s'; brand_id='%s')>" % \
             (self.id, self.sku_code, self.brand_id)
@@ -148,7 +158,7 @@ class SkuPerPost(Base):
         return "<SkuPerPost(id='%s'; post_id='%s'; sku_code='%s')>" % \
             (self.id, self.post_id, self.sku_code)
 
-
+      
 class Proxy(Base):
     __tablename__ = 'proxies'
 
@@ -178,3 +188,152 @@ class Proxy(Base):
     def __repr__(self):
         return "<Proxy(id='%s'; host='%s'; user='%s'; http='%s'; sock5='%s')>" % \
             (self.id, self.host, self.username, self.http_port, self.sock5)
+      
+      
+class MentionsDatabase:
+    """
+   Class to interact with parsers_bd.top_blogger_bot_schema
+   """
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def upload_wb_items_ad_parser_results(self, parser_result: TgWbItemsAdChatParser.Result) -> None:
+        """
+        :param parser_result: object type of TgWbItemsAdChatParserResult
+        """
+        for tg_chat in parser_result.tg_chats_to_update:
+            self.update_tg_chat(tg_chat)
+        self.upload_chats_to_db(parser_result.parsed_tg_chats)
+        self.upload_tg_posts_to_db(parser_result.parsed_posts, parser_result.parsed_skus)
+        self.session.commit()
+
+    def upload_chats_to_db(self, tg_chats: set[TgChatsToParse]) -> None:
+        """
+        Uploads tg_chats to db if db doesn't has entry with same tg_id or link
+        :param tg_chats: iterable with elements type of TgChatsToParse
+        """
+        uploaded_chats_counter = 0
+        if len(tg_chats) != 0:
+            for tg_chat in tg_chats:
+                if tg_chat.tg_id is not None:
+                    filter_condition = TgChatsToParse.tg_id == tg_chat.tg_id
+                else:
+                    filter_condition = TgChatsToParse.link == tg_chat.link
+                if self.session.query(TgChatsToParse).filter(filter_condition).one_or_none() is None:
+                    self.session.add(tg_chat)
+                    uploaded_chats_counter = uploaded_chats_counter + 1
+            logger.info(f'UPLOADED {uploaded_chats_counter} NEW CHATS')
+
+    def get_mentions_by_sku(self, sku_code: int) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        method for obtaining a dictionary of mentions filtered by sku code
+        :param sku_code: sku to filter
+        :return: dict with mentions per posts per chats
+        """
+        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code == sku_code).all()
+        return self.generate_mentions_dict(mentions)
+
+    def get_mentions_by_brand(self, brand_name: str) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        method for obtaining a dictionary of mentions filtered by brand name
+        :param brand_name: string, case-insensitive
+        :return: dict with mentions per posts per chats
+        """
+        brand_id = self.session.query(Brand.brand_id).filter(func.lower(Brand.name) == brand_name).one_or_none()
+        if brand_id is None:
+            return {}
+        brand_skus = self.session.query(Sku.sku_code).filter(Sku.brand_id == brand_id[0]).all()
+        brand_skus_list = list(brand_sku[0] for brand_sku in brand_skus)
+        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code.in_(brand_skus_list)).all()
+        return self.generate_mentions_dict(mentions)
+
+    def generate_mentions_dict(self, mentions: list[SkuPerPost]) -> \
+            dict[TgChatsToParse, dict[ParserResultTgPost, list[SkuPerPost]]]:
+        """
+        creates dict from orm objects
+        :param mentions: list of orm of SkuPerPost class
+        :return: dict with mentions per posts per chats
+        """
+        resulting_dict = dict()
+        for mention in mentions:
+            chat: TgChatsToParse = mention.post.chat
+            post: ParserResultTgPost = mention.post
+            if chat in resulting_dict.keys():
+                if post in resulting_dict[chat].keys():
+                    resulting_dict[chat][post].append(mention)
+                else:
+                    resulting_dict[chat][post] = [mention]
+            else:
+                resulting_dict[chat] = {post: [mention]}
+        return resulting_dict
+
+    def update_tg_chat(self, tg_chat: TgChatsToParse) -> None:
+        """
+        Updates entry in top_blogger_stat_bot.tg_chats_to_parse table
+        :param tg_chat: object type of TgChatsToParse to update
+        """
+        tg_chat.updated_at = datetime.now()
+        self.update_tg_chat_without_update_time(tg_chat)
+
+    def update_tg_chat_without_update_time(self, tg_chat: TgChatsToParse) -> None:
+        if not tg_chat.update_required:
+            return
+        tg_chat_dict = vars(tg_chat).copy()
+        for var in vars(tg_chat):
+            if var.startswith('_'):
+                tg_chat_dict.pop(var)
+        tg_chat.update_required = False
+        self.session.query(TgChatsToParse). \
+            filter(TgChatsToParse.id == tg_chat.id). \
+            update(tg_chat_dict, synchronize_session=False)
+        self.session.commit()
+
+    def upload_tg_posts_to_db(self, parsed_posts: set[TgChatsToParse], parsed_skus: dict[int, Sku]) -> (int, int):
+        brand_dict = get_brands_by_skus(list(parsed_skus.keys()))
+
+        new_skus_counter = 0
+        for sku in parsed_skus.values():
+            sku_from_db = self.session.query(Sku).filter(Sku.sku_code == sku.sku_code).one_or_none()
+            if sku_from_db is None:
+                brand = brand_dict.get(sku.sku_code)
+                is_loaded = self.load_sku(sku, brand)  # int 0 or 1
+                new_skus_counter += is_loaded
+        new_post_counter = 0
+        total_mentions_count = 0
+        for post in parsed_posts:
+            post_from_db = self.session.query(ParserResultTgPost). \
+                filter(and_(ParserResultTgPost.chat_id == post.chat_id,
+                            ParserResultTgPost.message_id == post.message_id)).one_or_none()
+            skus_in_post = len(post.sku_per_post)
+
+            if post_from_db is None and skus_in_post != 0:
+                total_mentions_count = total_mentions_count + skus_in_post
+                new_post_counter = new_post_counter + 1
+                self.session.add(post)
+        return new_post_counter, total_mentions_count
+
+    def load_sku(self, sku: Sku, brand: BrandRec) -> int:
+        if brand is not None and brand.brand_id != 0:
+            brand_from_db = self.session.query(Brand).filter(Brand.brand_id == brand.brand_id).one_or_none()
+            if brand_from_db is None:
+                try:
+                    with self.session.begin_nested():
+                        brand_from_db = Brand(brand_id=brand.brand_id, name=brand.name)
+                        self.session.add(brand_from_db)
+                except IntegrityError:
+                    pass
+            sku.brand_id = brand.brand_id
+            try:
+                with self.session.begin_nested():
+                    self.session.add(sku)
+                    self.session.flush()
+            except IntegrityError:
+                return 0
+            return 1
+        # if brand is not present in dict from wb api
+        else:
+            sku.clean_sku_post()
+            return 0

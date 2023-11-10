@@ -1,16 +1,16 @@
 import os
 from datetime import datetime
-from src.dao.users_db import User, Request, RequestTypesEnum, RequestPlatformsEnum
-from aiogram.dispatcher import FSMContext
-from src.dao.db_config import DB_CONFIG
-from src.bot.user_states import UserStates
-from src.bot.keyboards import *
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from src.bot.keyboards import *
 from src.bot.keyboards import main_menu_keyboard, back_keyboard
-from src.dao.mock_mentions_db import Chat, Post, Mention, MentionsDatabase
+from src.bot.user_states import UserStates
+from src.dao.db_config import DB_CONFIG
+from src.dao.mentions_db import MentionsDatabase
+from src.dao.users_db import User, Request, RequestTypesEnum, RequestPlatformsEnum, UserDatabase
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
@@ -84,7 +84,7 @@ async def handle_entered_sku(message: types.Message, state: FSMContext):
         await bot.send_message(message.from_user.id, text='Артикул должен быть числом.')
         await UserStates.EnterSKU.set()
         return
-    mentions = db.get_mentions_by_sku(sku)
+    mentions = db.get_mentions_by_sku(int(sku))
     if not mentions:
         text = f'Артикул <i>{sku}</i> не упоминался ни в одном канале.'
     else:
