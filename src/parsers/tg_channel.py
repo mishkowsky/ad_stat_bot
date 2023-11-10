@@ -76,5 +76,5 @@ class TgChatAdChatParser(AbstractTgChatParser):
         def get_parsed_items_count(self):
             return len(self.parsed_tg_chats)
 
-    def get_parsed_results(self):
+    def get_parsed_results(self) -> Result:
         return TgChatAdChatParser.Result(self.get_tg_chats_to_update(), self.parsed_items)

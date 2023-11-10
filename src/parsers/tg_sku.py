@@ -106,6 +106,6 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
             """
             return len(self.parsed_skus)
 
-    def get_parsed_results(self):
+    def get_parsed_results(self) -> Result:
         return TgWbItemsAdChatParser.Result(self.get_tg_chats_to_update(), self.parsed_tg_chats,
                                             self.parsed_items, self.parsed_sku_db_instances)
