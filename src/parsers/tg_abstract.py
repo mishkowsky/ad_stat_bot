@@ -20,6 +20,8 @@ class AbstractTgChatParser(ABC):
     Abstract parser for telegram chats/channels
     """
 
+    chats_type = None
+
     def __init__(self, session_id: int, tg_chats_to_parse: list[TgChatsToParse], start_date: datetime):
         """
         :param session_id: id of telegram account, relevant api_id, api_hash must be passed to launch method
@@ -214,3 +216,6 @@ class AbstractTgChatParser(ABC):
         @abstractmethod
         def merge_with(self, another_parser_result) -> None:
             self.tg_chats_to_update.extend(another_parser_result.tg_chats_to_update)
+
+    def get_parser_result(self) -> AbstractResult:
+        raise NotImplemented
