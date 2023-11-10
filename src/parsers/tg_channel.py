@@ -5,8 +5,8 @@ from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl
 from src.dao.mentions_db import ChatContentType
 from src.dao.mentions_db import TgChatsToParse
-from .tg_abstract import AbstractTgChatParser, AbstractParserTgChatResult
-from .tg_utils import get_chat_info_by_link, refactor_tg_url
+from src.parsers.tg_abstract import AbstractTgChatParser
+from src.parsers.tg_utils import get_chat_info_by_link, refactor_tg_url
 
 
 class TgChatAdChatParser(AbstractTgChatParser):
@@ -22,7 +22,7 @@ class TgChatAdChatParser(AbstractTgChatParser):
         super().__init__(session_id, tg_chats_to_parse, start_date)
         self.parsed_links: set[str] = set()
 
-    def parse_message(self, message):
+    def parse_message(self, message) -> list[TgChatsToParse]:
         logger.debug(f'PARSING CHAT LINKS')
         links = set()
         for url_entity, inner_text in message.get_entities_text(MessageEntityTextUrl):
@@ -56,7 +56,7 @@ class TgChatAdChatParser(AbstractTgChatParser):
                 links.add(refactored_url)
         return links
 
-    def find_tg_mentions(self, message):
+    def find_tg_mentions(self, message) -> set[str]:
         mentions = set()
         match_result = self.tg_mention_pattern.findall(message)
         for mention in match_result:
@@ -65,17 +65,16 @@ class TgChatAdChatParser(AbstractTgChatParser):
                 mentions.add(tg_link)
         return mentions
 
+    @dataclass
+    class Result(AbstractTgChatParser.AbstractResult):
+        parsed_tg_chats: set
+
+        def merge_with(self, another_parser_result):
+            super().merge_with(another_parser_result)
+            self.parsed_tg_chats = self.parsed_tg_chats.union(another_parser_result.parsed_tg_chats)
+
+        def get_parsed_items_count(self):
+            return len(self.parsed_tg_chats)
+
     def get_parsed_results(self):
-        return TgChatAdChatParserResult(self.get_tg_chats_to_update(), self.parsed_items)
-
-
-@dataclass
-class TgChatAdChatParserResult(AbstractParserTgChatResult):
-    parsed_tg_chats: set
-
-    def merge_with(self, another_parser_result):
-        super().merge_with(another_parser_result)
-        self.parsed_tg_chats = self.parsed_tg_chats.union(another_parser_result.parsed_tg_chats)
-
-    def get_parsed_items_count(self):
-        return len(self.parsed_tg_chats)
+        return TgChatAdChatParser.Result(self.get_tg_chats_to_update(), self.parsed_items)

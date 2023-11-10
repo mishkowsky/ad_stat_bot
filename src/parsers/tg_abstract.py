@@ -95,9 +95,7 @@ class AbstractTgChatParser(ABC):
         except FloodWaitError as e:
             self.time_to_sleep = e.seconds
 
-        # from docs for get_entity method: "You can also pass a list or iterable of entities,
-        #                                   and they will be efficiently fetched from the network."
-        self.chats.extend(await self.client.get_entity(tg_chat_ids))
+        self.chats.extend([await self.client.get_entity(tg_chat_ids)])
 
         self.chats_count = len(self.chats)
         await self.get_chats_info()
@@ -206,14 +204,13 @@ class AbstractTgChatParser(ABC):
                 tg_chats_to_update.append(tg_chat)
         return tg_chats_to_update
 
+    @dataclass
+    class AbstractResult(ABC):
+        """
+        Wrapper for parser results
+        """
+        tg_chats_to_update: list
 
-@dataclass
-class AbstractParserTgChatResult(ABC):
-    """
-    Wrapper for parser results
-    """
-    tg_chats_to_update: list
-
-    @abstractmethod
-    def merge_with(self, another_parser_result) -> None:
-        self.tg_chats_to_update.extend(another_parser_result.tg_chats_to_update)
+        @abstractmethod
+        def merge_with(self, another_parser_result) -> None:
+            self.tg_chats_to_update.extend(another_parser_result.tg_chats_to_update)
