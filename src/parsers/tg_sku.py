@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl, PeerChat, PeerChannel
-from src.dao.mentions_db import ParserResultTgPost, Sku, SkuPerPost, ChatContentType
+from src.dao.mentions_db import Post, Sku, SkuPerPost, ChatContentType
 from src.parsers.tg_channel import TgChatAdChatParser
 from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern
-from src.dao.mentions_db import TgChatsToParse
+from src.dao.mentions_db import Chat
 from src.utils import resolve_redirection_link
 
 
@@ -13,9 +13,9 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
 
     chats_type = ChatContentType.wb_items_ads
 
-    def __init__(self, session_id: int, tg_chats_to_parse: list[TgChatsToParse], start_date: datetime):
+    def __init__(self, session_id: int, tg_chats_to_parse: list[Chat], start_date: datetime):
         super().__init__(session_id, tg_chats_to_parse, start_date)
-        self.parsed_tg_chats: set[TgChatsToParse] = set()
+        self.parsed_tg_chats: set[Chat] = set()
         self.parsed_sku_db_instances: dict[int, Sku] = dict()
 
     def parse_message(self, message):
@@ -57,9 +57,9 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         followers = self.get_followers_by_chat_id(chat_id)                      # followers
         er = (replies_count + reactions_count) / followers * 100                # er
 
-        post = ParserResultTgPost(message_id=str(message.id), chat_id=str(chat_id), views_count=views_count,
-                                  replies_count=replies_count, shared_count=forwards_count, er=er,
-                                  reactions_count=reactions_count, comments_count=replies_count, date=date)
+        post = Post(message_id=str(message.id), chat_id=self.get_chat_id_by_tg_chat_id(chat_id),
+                    views_count=views_count, replies_count=replies_count, shared_count=forwards_count,
+                    er=er, reactions_count=reactions_count, comments_count=replies_count, date=date)
 
         for sku in skus:
             if sku not in self.parsed_sku_db_instances.keys():
@@ -76,6 +76,11 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
             if tg_chat.tg_id == str(tg_chat_id):
                 return tg_chat.followers
 
+    def get_chat_id_by_tg_chat_id(self, tg_chat_id: int) -> int:
+        for tg_chat in self.tg_chats_to_parse:
+            if tg_chat.tg_id == str(tg_chat_id):
+                return tg_chat.id
+
     def get_skus_from_message_hyperlinks(self, message) -> set[int]:
         skus = set()
         for url_entity, inner_text in message.get_entities_text(MessageEntityTextUrl):
@@ -84,7 +89,7 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
             # </editor-fold>
             resolved_sku = resolve_redirection_link(url_entity.url)
             if resolved_sku is not None:
-                skus = skus.add(resolved_sku)
+                skus.add(resolved_sku)
         return skus
 
     @dataclass
@@ -92,7 +97,7 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         """
         Wrapper for parser results
         """
-        parsed_posts: set[TgChatsToParse]
+        parsed_posts: set[Chat]
         parsed_skus: dict[int, Sku]
 
         def merge_with(self, another_parser_result) -> None:

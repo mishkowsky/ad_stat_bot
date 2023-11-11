@@ -4,7 +4,7 @@ from datetime import datetime
 from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl
 from src.dao.mentions_db import ChatContentType
-from src.dao.mentions_db import TgChatsToParse
+from src.dao.mentions_db import Chat
 from src.parsers.tg_abstract import AbstractTgChatParser
 from src.parsers.tg_utils import get_chat_info_by_link, refactor_tg_url
 
@@ -18,11 +18,11 @@ class TgChatAdChatParser(AbstractTgChatParser):
 
     chats_type = ChatContentType.chat_ads
 
-    def __init__(self, session_id: int, tg_chats_to_parse: list[TgChatsToParse], start_date: datetime):
+    def __init__(self, session_id: int, tg_chats_to_parse: list[Chat], start_date: datetime):
         super().__init__(session_id, tg_chats_to_parse, start_date)
         self.parsed_links: set[str] = set()
 
-    def parse_message(self, message) -> list[TgChatsToParse]:
+    def parse_message(self, message) -> list[Chat]:
         logger.debug(f'PARSING CHAT LINKS')
         links = set()
         for url_entity, inner_text in message.get_entities_text(MessageEntityTextUrl):
@@ -43,8 +43,8 @@ class TgChatAdChatParser(AbstractTgChatParser):
             self.parsed_links.add(link)
             title, members_count = get_chat_info_by_link(link)
             if title is not None and 'отзыв' not in title.lower():
-                resolved_tg_chats.append(TgChatsToParse(link=link, chat_content=ChatContentType.wb_items_ads,
-                                                        title=title, followers=members_count, update_required=True))
+                resolved_tg_chats.append(Chat(link=link, chat_content=ChatContentType.wb_items_ads,
+                                              title=title, followers=members_count, update_required=True))
         return resolved_tg_chats
 
     def find_tg_links(self, url: str) -> set[str]:

@@ -1,19 +1,18 @@
 import asyncio
 import sys
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Type
 from loguru import logger
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from config import SESSIONS_FILE_PATH, SESSION_COUNT, API_IDS, API_HASHES, ROOT_DIR, THREAD_LOGGER_FORMAT
-from src.dao.proxy import Proxy
+from src.dao.mentions_db import Proxy
 from src.dao.db_config import DBConfigInstance, DB_CONFIG
 from src.dao.mentions_db import MentionsDatabase
 from src.parsers.tg_abstract import AbstractTgChatParser
 from src.utils import divide_into_chunks
 from src.utils import split_joined_non_joined_chats
-
 from src.parsers.tg_sku import TgWbItemsAdChatParser
 
 
@@ -51,7 +50,7 @@ class ParserLauncher:
         threads_count = min(SESSION_COUNT, len(proxies))
         logger.info(f'STARTING {threads_count} THREADS')
         chunks = list(divide_into_chunks(non_joined_tg_chats, threads_count))
-        start_date = datetime.now().replace(hour=0)
+        start_date = datetime.now() - timedelta(days=1)
         for i, chunk in enumerate(chunks):
             session_id = i + 1
             session_id_chats[session_id].extend(chunk)

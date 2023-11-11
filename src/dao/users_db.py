@@ -3,8 +3,7 @@ from datetime import datetime
 from sqlalchemy import Enum, MetaData, Column, Integer, String, DateTime, update
 from sqlalchemy.orm import declarative_base, Session
 
-
-metadata_obj = MetaData(schema='ad_stat_bot')
+metadata_obj = MetaData(schema='users')
 Base = declarative_base(metadata=metadata_obj)
 
 
@@ -22,10 +21,10 @@ class RequestPlatformsEnum(enum.Enum):
 
 class Request(Base):
 
-    __tablename__ = 'tg_bot_stat_user_request'
+    __tablename__ = 'user_request'
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(String)
     request_type = Column(Enum(RequestTypesEnum))
     request_platform = Column(Enum(RequestPlatformsEnum))
     request = Column(String)
@@ -34,14 +33,15 @@ class Request(Base):
 
 class User(Base):
 
-    __tablename__ = 'tg_bot_stat_user'
+    __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer)
+    user_id = Column(String)
     username = Column(String)
     first_name = Column(String)
     last_name = Column(String)
     created_at = Column(DateTime)
+    last_interaction_date = Column(DateTime)
 
 
 class UserDatabase:

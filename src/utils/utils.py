@@ -1,8 +1,7 @@
 import re
 import requests
 from loguru import logger
-from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema
-from src.dao.mentions_db import TgChatsToParse
+from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema, ConnectTimeout
 from src.utils.wb_utils import get_sku_from_url, get_sku_from_text
 
 
@@ -33,7 +32,7 @@ def resolve_redirection_link(link: str) -> int | None:
         link = f'http://{link}'
     try:
         response = requests.get(link, timeout=15, headers=headers)
-    except (TimeoutError, InvalidURL, ConnectionError, MissingSchema, InvalidSchema) as e:
+    except Exception as e:  # requests.exceptions as e:
         logger.warning(f'ERROR {e} ON URL: {link}')
         return None
     sku = get_sku_from_url(response.url)
@@ -57,8 +56,7 @@ def divide_into_chunks(input_list: list, chunks: int):
         yield input_list[i::chunks]
 
 
-def split_joined_non_joined_chats(tg_chats: list[TgChatsToParse], sessions_count: int) \
-        -> (list[TgChatsToParse], dict[int, TgChatsToParse]):
+def split_joined_non_joined_chats(tg_chats: list, sessions_count: int) -> (list, dict):
     """
     Splits given chat list into: list with non-joined chats, dict with joined chats list per session_id
     :param tg_chats:

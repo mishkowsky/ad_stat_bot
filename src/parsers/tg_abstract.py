@@ -10,7 +10,7 @@ from opentele.tl import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.types import Chat, ChatEmpty, Channel
 from config import ROOT_DIR, THREAD_LOGGER_FORMAT
-from src.dao.mentions_db import TgChatsToParse
+from src.dao.mentions_db import Chat
 from src.utils import format_message_to_print
 from .tg_utils import get_list_of_chat_ids, send_join_requests
 
@@ -22,7 +22,7 @@ class AbstractTgChatParser(ABC):
 
     chats_type = None
 
-    def __init__(self, session_id: int, tg_chats_to_parse: list[TgChatsToParse], start_date: datetime):
+    def __init__(self, session_id: int, tg_chats_to_parse: list[Chat], start_date: datetime):
         """
         :param session_id: id of telegram account, relevant api_id, api_hash must be passed to launch method
         """
@@ -30,7 +30,7 @@ class AbstractTgChatParser(ABC):
         self.time_to_sleep: int = 0
         self.session_id = session_id
         self.chat_ids: set[int] = set()
-        self.tg_chats_to_parse: list[TgChatsToParse] = tg_chats_to_parse
+        self.tg_chats_to_parse: list[Chat] = tg_chats_to_parse
         self.joined_chats_id: set[int] = set()
         self.chats: list[Chat] = list()
         self.parsed_items: set = set()
@@ -44,7 +44,7 @@ class AbstractTgChatParser(ABC):
         adds logger output to file
         """
         thread_id = threading.get_native_id()
-        output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/{self.session_id}/' \
+        output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/Thread-{self.session_id}/' \
                           f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
         logger.debug(f'ADDING LOGGER TO {output_log_file}')
         logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
@@ -97,7 +97,7 @@ class AbstractTgChatParser(ABC):
         except FloodWaitError as e:
             self.time_to_sleep = e.seconds
 
-        self.chats.extend([await self.client.get_entity(tg_chat_ids)])
+        self.chats.extend(await self.client.get_entity(tg_chat_ids))
 
         self.chats_count = len(self.chats)
         await self.get_chats_info()
@@ -195,7 +195,7 @@ class AbstractTgChatParser(ABC):
         loop.run_until_complete(self.parse(anon_path, api_id, api_hash, proxy_config))
         loop.close()
 
-    def get_tg_chats_to_update(self) -> list[TgChatsToParse]:
+    def get_tg_chats_to_update(self) -> list[Chat]:
         """
         Filter self.tg_chats_to_parse that require db update
         :return: list with objects type of TgChatsToParse with attribute update_required == True
