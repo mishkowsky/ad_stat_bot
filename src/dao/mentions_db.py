@@ -171,11 +171,19 @@ class Proxy(Base):
     http_port = Column(Integer)
     sock5_port = Column(Integer)
 
-    def get_http_dict(self):
+    def get_http_dict(self) -> dict[str, str]:
+        """
+        dict for requests library
+        :return: dict with schema as key, connection str as value
+        """
         http_url = f'http://{self.username}:{self.password}@{self.host}:{self.http_port}'
         return {'http': http_url, 'https': http_url}
 
-    def get_http_config_dict(self):
+    def get_http_config_dict(self) -> dict[str, str]:
+        """
+        dict for telethon library
+        :return: dict with proxy properties
+        """
         return {
             'proxy_type': 'http',       # (mandatory) protocol to use
             'addr': self.host,          # (mandatory) proxy IP address

@@ -1,7 +1,9 @@
 import re
+from datetime import datetime
+from multiprocessing import current_process
 import requests
 from loguru import logger
-from requests.exceptions import InvalidURL, MissingSchema, InvalidSchema, ConnectTimeout
+from config import *
 from src.utils.wb_utils import get_sku_from_url, get_sku_from_text
 
 
@@ -32,7 +34,7 @@ def resolve_redirection_link(link: str) -> int | None:
         link = f'http://{link}'
     try:
         response = requests.get(link, timeout=15, headers=headers)
-    except Exception as e:  # requests.exceptions as e:
+    except requests.exceptions as e:
         logger.warning(f'ERROR {e} ON URL: {link}')
         return None
     sku = get_sku_from_url(response.url)
@@ -73,3 +75,18 @@ def split_joined_non_joined_chats(tg_chats: list, sessions_count: int) -> (list,
         else:
             joined_tg_chats[chat.session_id].append(chat)
     return non_joined_tg_chats, joined_tg_chats
+
+
+def add_log_to_file_for_process(class_name: str) -> None:
+    """
+    adds logger for process to file with path WORKDIR/LOG_FILES_FOLDER/class_name/dd.mm.YYYY_HH.MM/log.txt
+    :param class_name: name of program to log
+    """
+    if LOGGER_LEVEL != 'OFF' and LOG_FILES_FOLDER is not None:
+        current_process_name = current_process().name
+        pid = current_process().pid
+        output_log_file = f'{ROOT_DIR}/{LOG_FILES_FOLDER}/{class_name}/' \
+                          f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/{current_process_name}/log.txt'
+        logger.debug(f'ADDING LOGGER TO {output_log_file}')
+        logger.add(output_log_file, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL,
+                   filter=lambda record: record['process'].id == pid)
