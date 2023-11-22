@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from config import PROCESS_LOGGER_FORMAT, LOGGER_LEVEL
 from src.dao import db_config
 from src.dao.mentions_db import SkuPerPost, Sku, Post, MentionsDatabase, Proxy, ChatContentType, Chat
-from src.parsers_tgstat.utils import get_skus_from_post_hyperlinks, get_tgstat_url, get_value_from_icon_element, \
+from src.parsers.tgstat.utils import get_skus_from_post_hyperlinks, get_tgstat_url, get_value_from_icon_element, \
     get_post_date_from_string, get_post_id, get_tgstat_csrk_from_cookie
 from src.utils import format_message_to_print, add_log_to_file_for_process
 from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern

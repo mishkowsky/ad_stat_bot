@@ -10,10 +10,10 @@ from config import SESSIONS_FILE_PATH, SESSION_COUNT, API_IDS, API_HASHES, ROOT_
 from src.dao.mentions_db import Proxy
 from src.dao.db_config import DBConfigInstance, DB_CONFIG
 from src.dao.mentions_db import MentionsDatabase
-from src.parsers.tg_abstract import AbstractTgChatParser
+from src.parsers.telegram.abstract import AbstractTgChatParser
 from src.utils import divide_into_chunks
 from src.utils import split_joined_non_joined_chats
-from src.parsers.tg_sku import TgWbItemsAdChatParser
+from src.parsers.telegram.sku import TgWbItemsAdChatParser
 
 
 class ParserLauncher:

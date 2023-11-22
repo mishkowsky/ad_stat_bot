@@ -12,7 +12,7 @@ from telethon.tl.types import Chat, ChatEmpty, Channel
 from config import ROOT_DIR, THREAD_LOGGER_FORMAT
 from src.dao.mentions_db import Chat
 from src.utils import format_message_to_print
-from .tg_utils import get_list_of_chat_ids, send_join_requests
+from src.parsers.telegram.utils import get_list_of_chat_ids, send_join_requests
 
 
 class AbstractTgChatParser(ABC):
