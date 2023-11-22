@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from src.dao import db_config
 from src.dao.mentions_db import Chat, ChatContentType, MentionsDatabase
-from src.parsers.tg_channel import TgChatAdChatParser
+from src.parsers.telegram.chat import TgChatAdChatParser
 
 
 class CategoryParser:

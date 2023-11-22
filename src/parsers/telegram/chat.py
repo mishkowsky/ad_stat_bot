@@ -5,8 +5,8 @@ from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl
 from src.dao.mentions_db import ChatContentType
 from src.dao.mentions_db import Chat
-from src.parsers.tg_abstract import AbstractTgChatParser
-from src.parsers.tg_utils import get_chat_info_by_link, refactor_tg_url
+from src.parsers.telegram.abstract import AbstractTgChatParser
+from src.parsers.telegram.utils import get_chat_info_by_link, refactor_tg_url
 
 
 class TgChatAdChatParser(AbstractTgChatParser):

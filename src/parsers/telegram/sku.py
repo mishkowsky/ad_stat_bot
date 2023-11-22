@@ -3,7 +3,7 @@ from datetime import datetime
 from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl, PeerChat, PeerChannel
 from src.dao.mentions_db import Post, Sku, SkuPerPost, ChatContentType
-from src.parsers.tg_channel import TgChatAdChatParser
+from src.parsers.telegram.chat import TgChatAdChatParser
 from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern
 from src.dao.mentions_db import Chat
 from src.utils import resolve_redirection_link
