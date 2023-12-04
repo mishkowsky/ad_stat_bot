@@ -410,9 +410,7 @@ class ChannelParser:
 
 
 if __name__ == '__main__':
-    engine = create_engine(db_config.DB_CONFIG.DB_URI, echo=False)
-    session = Session(bind=engine, autoflush=False)
-    database_ = MentionsDatabase(session)
+    database_ = MentionsDatabase(next(get_db()))
     proxy_ = database_.session.query(Proxy).first()[0]
     start_date_ = datetime.min
     cp = ChannelParser(start_date=start_date_, database=database_, proxy=proxy_.get_http_dict())
@@ -420,6 +418,3 @@ if __name__ == '__main__':
     chats_ = database_.get_chats_by_content_type(ChatContentType.wb_items_ads)
 
     cp.process_chats(chats_)
-
-    engine.dispose()
-    session.close()

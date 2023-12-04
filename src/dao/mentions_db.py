@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Type
 from loguru import logger
 from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String, text, MetaData, Enum, \
-    orm, Float, func, and_
+    orm, Float, func, and_, Boolean
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base, relationship, Session
 from src.utils.wb_utils import get_brands_by_skus, BrandRec
@@ -176,7 +176,10 @@ class Proxy(Base):
         dict for requests library
         :return: dict with schema as key, connection str as value
         """
-        http_url = f'http://{self.username}:{self.password}@{self.host}:{self.http_port}'
+        if self.username is not None:
+            http_url = f'http://{self.username}:{self.password}@{self.host}:{self.http_port}'
+        else:
+            http_url = f'http://{self.host}:{self.http_port}'
         return {'http': http_url, 'https': http_url}
 
     def get_http_config_dict(self) -> dict[str, str]:
@@ -223,6 +226,15 @@ class MentionsDatabase:
             self.update_tg_chat(tg_chat)
         self.upload_chats_to_db(parser_result.parsed_tg_chats)
         self.upload_tg_posts_to_db(parser_result.parsed_posts, parser_result.parsed_skus)
+        self.session.commit()
+
+    def upload_chat_ad_parser_result(self, parser_result):
+        """
+        :param parser_result: object type of TgChatAdChatParserResult
+        """
+        for tg_chat in parser_result.tg_chats_to_update:
+            self.update_tg_chat(tg_chat)
+        self.upload_chats_to_db(parser_result.parsed_tg_chats)
         self.session.commit()
 
     def upload_chats_to_db(self, tg_chats: set[Chat]) -> None:
@@ -300,7 +312,7 @@ class MentionsDatabase:
             return
         tg_chat_dict = vars(tg_chat).copy()
         for var in vars(tg_chat):
-            if var.startswith('_'):
+            if var.startswith('_') or var == 'update_required':
                 tg_chat_dict.pop(var)
         tg_chat.update_required = False
         self.session.query(Chat). \
