@@ -3,7 +3,6 @@ from datetime import datetime
 from multiprocessing import Process
 from loguru import logger
 from sqlalchemy import select
-
 from config import LOGGER_LEVEL, PROCESS_LOGGER_FORMAT
 from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase, ChatContentType, Chat
@@ -23,7 +22,6 @@ def launch_parser(chats: list[Chat], proxy: dict[str, str] | None) -> None:
 
     database = MentionsDatabase(next(get_db()))
     start_date = datetime.min
-    print(start_date)
     cp = ChannelParser(start_date=start_date, database=database, proxy=proxy)
 
     cp.process_chats(chats)
@@ -39,9 +37,10 @@ def launch_many_parsers() -> None:
     add_log_to_file_for_process('ChannelParserLauncher')
 
     database = MentionsDatabase(next(get_db()))
+    logger.debug(database.session.get_bind().url)
     chats = database.get_chats_by_content_type(ChatContentType.wb_items_ads)
-    proxies = database.session.execute(select(Proxy)).all()
-
+    proxies = database.session.execute(select(Proxy)).scalars().all()
+    logger.debug(f'GOT {len(proxies)} FROM DB')
     processes = []
     proxies_list = [proxy.get_http_dict() for proxy in proxies]
     chats_chunks = list(divide_into_chunks(chats, len(proxies_list)))

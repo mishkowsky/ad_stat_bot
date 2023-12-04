@@ -6,7 +6,7 @@ from bs4 import PageElement
 from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl
 from config import *
-from src.utils.wb_utils import get_sku_from_url, get_sku_from_text, wb_link_pattern, wb_sku_pattern
+from src.utils.wb_utils import get_sku_from_url, get_sku_from_text, wb_link_pattern, wb_sku_pattern, non_wb_links
 
 
 def format_message_to_print(message: str) -> str:
@@ -108,7 +108,7 @@ class LinkSkuResolver:
         """
         self.get_skus_from_tgstat_post_hyperlinks(post)
         post_text = post.find_next('div', {'class': 'post-text'})
-        self.get_skus_from_text(post_text)
+        self.get_skus_from_text(post_text.text)
         return self.skus
 
     def get_skus_from_tgstat_post_hyperlinks(self, post: PageElement) -> set[int]:
@@ -123,20 +123,10 @@ class LinkSkuResolver:
             return self.skus
         for hyperlink in post_text.find_all('a'):
             link = hyperlink['href']
-            if link == '#' or link in self.resolved_links \
-                    or link.startswith(('https://tgstat.ru/', 'https://ttttt.me/',
-                                        'https://t.me/', 'https://market.yandex.ru/')):
-                continue
             # <editor-fold desc="log">
             logger.debug(f'INNER TEXT: {hyperlink.text}; LINK: {link}')
             # </editor-fold>
-            if wb_link_pattern.match(link):
-                resolved_sku = wb_sku_pattern.findall(link)[0]
-            else:
-                resolved_sku = resolve_redirection_link(link)
-            self.resolved_links.add(link)
-            if resolved_sku is not None:
-                self.skus.union([int(resolved_sku)])
+            self.resolve_link(link)
         return self.skus
 
     def get_skus_from_telethon_message(self, message) -> set[int]:
@@ -180,9 +170,10 @@ class LinkSkuResolver:
         adds resolved sku from link to self.skus
         :param link: any url link
         """
-        if link in self.resolved_links:
+        if link == '#' or link in self.resolved_links or link.startswith(non_wb_links):
             return
-        if wb_link_pattern.match(link):
+        match = wb_link_pattern.findall(link)
+        if len(match) != 0:
             sku = int(wb_sku_pattern.findall(link)[0])
         else:
             sku = resolve_redirection_link(link)

@@ -29,8 +29,9 @@ class ChannelParser:
         """
 
         logger.remove()
-        logger.add(sys.stdout, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL)
-        add_log_to_file_for_process(self.__class__.__name__)
+        if LOGGER_LEVEL != 'OFF':
+            logger.add(sys.stdout, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL)
+            add_log_to_file_for_process(self.__class__.__name__)
 
         logger.debug('INIT SUCCESFULL')
 
@@ -188,6 +189,7 @@ class ChannelParser:
         if self.chat.update_required:
             logger.debug(f'UPDATING TGCHAT {self.chat.link}; RPPID: {self.chat.recent_parsed_post_tg_id}')
             self.database.update_tg_chat(self.chat)
+            logger.debug(f'CHAT WAS UPDATED')
 
         more_button = soup.find('div', {'class': 'lm-button-container'})
         if more_button is not None:

@@ -6,6 +6,7 @@ import requests
 wb_sku_pattern = re.compile(r'\d{5,}')
 wb_size_pattern = re.compile(r'(?<=size=)\d+')
 wb_link_pattern = re.compile(r'(?:(?:(?:wb)|(?:wildberries))\.ru(?:(?:/catalog/)|(?:/product\?card=)))\d+')
+non_wb_links = ('https://tgstat.ru/', 'https://ttttt.me/', 'https://t.me/', 'https://market.yandex.ru/')
 
 
 def get_sku_from_url(link) -> int:
