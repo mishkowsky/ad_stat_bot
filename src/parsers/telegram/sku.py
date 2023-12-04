@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 from loguru import logger
-from telethon.tl.types import MessageEntityTextUrl, PeerChat, PeerChannel
+from telethon.tl.types import PeerChat, PeerChannel
+from telethon.tl.patched import Message
 from src.dao.mentions_db import Post, Sku, SkuPerPost, ChatContentType
 from src.parsers.telegram.chat import TgChatAdChatParser
-from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern
+from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern, wb_link_pattern
 from src.dao.mentions_db import Chat
-from src.utils import resolve_redirection_link
+from src.utils import LinkSkuResolver
 
 
 class TgWbItemsAdChatParser(TgChatAdChatParser):
@@ -18,18 +19,21 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         self.parsed_tg_chats: set[Chat] = set()
         self.parsed_sku_db_instances: dict[int, Sku] = dict()
 
-    def parse_message(self, message):
+    def parse_message(self, message: Message):
         parsed_tg_chats_from_message = super().parse_message(message)
         self.parsed_tg_chats = self.parsed_tg_chats.union(parsed_tg_chats_from_message)
 
         if message.fwd_from is not None:  # skip if message is reply
             return
 
-        skus = self.get_skus_from_message_hyperlinks(message)
-        skus_a = {int(s) for s in wb_sku_pattern.findall(message.message) if s is not None}
-        skus = skus.union(skus_a)
+        skus = LinkSkuResolver().get_skus_from_telethon_message(message)
+        wb_links = wb_link_pattern.findall(message.message)
+        for wb_link in wb_links:
+            skus.add(int(wb_sku_pattern.findall(wb_link)[0]))
         skus = skus.difference([int(s) for s in wb_size_pattern.findall(message.message)])
-
+        # <editor-fold desc="log">
+        logger.debug(f'SKUS FOR MSG_ID: {message.id} ARE: {skus}')
+        # </editor-fold>
         chat_id = None
         if isinstance(message.peer_id, PeerChat):
             chat_id = message.peer_id.chat_id
@@ -80,17 +84,6 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         for tg_chat in self.tg_chats_to_parse:
             if tg_chat.tg_id == str(tg_chat_id):
                 return tg_chat.id
-
-    def get_skus_from_message_hyperlinks(self, message) -> set[int]:
-        skus = set()
-        for url_entity, inner_text in message.get_entities_text(MessageEntityTextUrl):
-            # <editor-fold desc="log">
-            logger.debug(f'INNER TEXT: {inner_text}; LINK: {url_entity}')
-            # </editor-fold>
-            resolved_sku = resolve_redirection_link(url_entity.url)
-            if resolved_sku is not None:
-                skus.add(resolved_sku)
-        return skus
 
     @dataclass
     class Result(TgChatAdChatParser.Result):

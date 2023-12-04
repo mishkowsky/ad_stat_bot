@@ -8,14 +8,14 @@ from bs4 import BeautifulSoup as bs, ResultSet, PageElement
 from loguru import logger
 from requests import JSONDecodeError
 from requests.exceptions import ProxyError
-from sqlalchemy import exc as sa_exc, create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy import exc as sa_exc
 from config import PROCESS_LOGGER_FORMAT, LOGGER_LEVEL
-from src.dao import db_config
+from src.dao.db_config import get_db
 from src.dao.mentions_db import SkuPerPost, Sku, Post, MentionsDatabase, Proxy, ChatContentType, Chat
-from src.parsers.tgstat.utils import get_skus_from_post_hyperlinks, get_tgstat_url, get_value_from_icon_element, \
+from src.parsers.tgstat.utils import get_tgstat_url, get_value_from_icon_element, \
     get_post_date_from_string, get_post_id, get_tgstat_csrk_from_cookie
-from src.utils import format_message_to_print, add_log_to_file_for_process
+from src.parsers.tgstat.verify_mention import wb_link_pattern
+from src.utils import format_message_to_print, add_log_to_file_for_process, LinkSkuResolver
 from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern
 
 
@@ -330,8 +330,6 @@ class ChannelParser:
                 self.chat.recent_parsed_post_tg_id = post_id
                 self.chat.update_required = True
 
-            skus = get_skus_from_post_hyperlinks(post)
-
             post_text_element = post.find_next('div', {'class': 'post-text'})
             if post_text_element is None:
                 logger.debug('POST DOESNT HAVE TEXT => SKIPPING')
@@ -340,8 +338,10 @@ class ChannelParser:
             # <editor-fold desc="log debug">
             logger.debug(f'PROCESSING POST DATED FROM {date_str}: {format_message_to_print(post_text)}')
             # </editor-fold>
-            skus_a = [int(s) for s in wb_sku_pattern.findall(post_text) if s is not None]
-            skus = skus.union(skus_a)
+            skus = LinkSkuResolver().get_skus_from_tgstat_post(post)
+            wb_links = wb_link_pattern.findall(post_text)
+            for wb_link in wb_links:
+                skus.add(int(wb_sku_pattern.findall(wb_link)[0]))
             skus = skus.difference([int(s) for s in wb_size_pattern.findall(post_text)])
 
             if len(skus) == 0:

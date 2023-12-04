@@ -2,6 +2,8 @@ import sys
 from datetime import datetime
 from multiprocessing import Process
 from loguru import logger
+from sqlalchemy import select
+
 from config import LOGGER_LEVEL, PROCESS_LOGGER_FORMAT
 from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase, ChatContentType, Chat
@@ -38,7 +40,7 @@ def launch_many_parsers() -> None:
 
     database = MentionsDatabase(next(get_db()))
     chats = database.get_chats_by_content_type(ChatContentType.wb_items_ads)
-    proxies = database.session.query(Proxy).all()
+    proxies = database.session.execute(select(Proxy)).all()
 
     processes = []
     proxies_list = [proxy.get_http_dict() for proxy in proxies]
