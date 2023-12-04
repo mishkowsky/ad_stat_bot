@@ -2,17 +2,15 @@ import sys
 from datetime import datetime
 from multiprocessing import Process
 from loguru import logger
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from config import LOGGER_LEVEL, PROCESS_LOGGER_FORMAT
-from src.dao.db_config import DB_CONFIG
+from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase, ChatContentType, Chat
 from src.dao.mentions_db import Proxy
 from src.parsers.tgstat.chat import ChannelParser
 from src.utils import divide_into_chunks, add_log_to_file_for_process
 
 
-def launch_parser(chats: list[Chat], proxy: dict[str, str]) -> None:
+def launch_parser(chats: list[Chat], proxy: dict[str, str] | None) -> None:
     """
     launch one parser
     :param chats: chats to parse
@@ -21,17 +19,12 @@ def launch_parser(chats: list[Chat], proxy: dict[str, str]) -> None:
     if LOGGER_LEVEL == 'OFF':
         logger.remove()
 
-    engine = create_engine(DB_CONFIG.DB_URI, echo=False)
-    session = Session(bind=engine, autoflush=False)
-    database = MentionsDatabase(session)
+    database = MentionsDatabase(next(get_db()))
     start_date = datetime.min
     print(start_date)
     cp = ChannelParser(start_date=start_date, database=database, proxy=proxy)
 
     cp.process_chats(chats)
-
-    engine.dispose()
-    session.close()
 
 
 def launch_many_parsers() -> None:
@@ -43,13 +36,9 @@ def launch_many_parsers() -> None:
         logger.add(sys.stdout, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL)
     add_log_to_file_for_process('ChannelParserLauncher')
 
-    engine = create_engine(DB_CONFIG.DB_URI, echo=False)
-    session = Session(bind=engine, autoflush=False)
-    database = MentionsDatabase(session)
+    database = MentionsDatabase(next(get_db()))
     chats = database.get_chats_by_content_type(ChatContentType.wb_items_ads)
     proxies = database.session.query(Proxy).all()
-    engine.dispose()
-    session.close()
 
     processes = []
     proxies_list = [proxy.get_http_dict() for proxy in proxies]

@@ -9,7 +9,8 @@ from opentele.api import API
 from opentele.tl import TelegramClient
 from telethon.errors import FloodWaitError
 from telethon.tl.types import Chat, ChatEmpty, Channel
-from config import ROOT_DIR, THREAD_LOGGER_FORMAT
+from telethon.tl.patched import Message
+from config import ROOT_DIR, THREAD_LOGGER_FORMAT, LOGGER_LEVEL
 from src.dao.mentions_db import Chat
 from src.utils import format_message_to_print
 from src.parsers.telegram.utils import get_list_of_chat_ids, send_join_requests
@@ -47,7 +48,8 @@ class AbstractTgChatParser(ABC):
         output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/Thread-{self.session_id}/' \
                           f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
         logger.debug(f'ADDING LOGGER TO {output_log_file}')
-        logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
+        logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, level=LOGGER_LEVEL,
+                   filter=lambda record: record['thread'].id == thread_id)
 
     async def parse(self, anon_path: str, api_id: int, api_hash: str, proxy_config: dict[str, str]) -> set:
         """
@@ -170,7 +172,7 @@ class AbstractTgChatParser(ABC):
                 self.chat_ids.add(dialog.entity.id)
 
     @abstractmethod
-    def parse_message(self, message):
+    def parse_message(self, message: Message):
         """
         Resolves item(s) from message.
         Override is necessary.
@@ -181,7 +183,7 @@ class AbstractTgChatParser(ABC):
         """
         raise NotImplemented
 
-    def launch(self, anon_path: str, api_id: int, api_hash: str, proxy_config: dict[str, str]) -> None:
+    def launch(self, anon_path: str, api_id: int, api_hash: str, proxy_config: dict[str, str] | None) -> None:
         """
         Launch async parse() function in new_event_loop()
         :param anon_path: path to .session file
@@ -189,7 +191,8 @@ class AbstractTgChatParser(ABC):
         :param api_hash: api_hash for account with same session_id that was passed to __init__
         :param proxy_config:
         """
-        self.add_logger()
+        if LOGGER_LEVEL != 'OFF':
+            self.add_logger()
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(self.parse(anon_path, api_id, api_hash, proxy_config))

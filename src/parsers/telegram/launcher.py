@@ -4,34 +4,29 @@ import threading
 from datetime import datetime, timedelta
 from typing import Type
 from loguru import logger
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from config import SESSIONS_FILE_PATH, SESSION_COUNT, API_IDS, API_HASHES, ROOT_DIR, THREAD_LOGGER_FORMAT
-from src.dao.mentions_db import Proxy
-from src.dao.db_config import DBConfigInstance, DB_CONFIG
+from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase
+from src.dao.mentions_db import Proxy
 from src.parsers.telegram.abstract import AbstractTgChatParser
+from src.parsers.telegram.sku import TgWbItemsAdChatParser
 from src.utils import divide_into_chunks
 from src.utils import split_joined_non_joined_chats
-from src.parsers.telegram.sku import TgWbItemsAdChatParser
 
 
 class ParserLauncher:
 
-    def __init__(self, db_config: DBConfigInstance):
+    def __init__(self):
         thread_id = threading.get_native_id()
         output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/' \
                           f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
         logger.debug(f'ADDING LOGGER TO {output_log_file}')
         logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
-        self.engine = create_engine(db_config.DB_URI, echo=False)
-        self.session = Session(bind=self.engine, autoflush=False)
+        self.session = next(get_db())
         self.database = MentionsDatabase(self.session)
 
     async def launch_all_parsers(self):
         self.launch_tg_parsers(TgWbItemsAdChatParser, self.database.upload_wb_items_ad_parser_results)
-        self.session.close()
-        self.engine.dispose()
 
     def launch_tg_parsers(self, tg_parser_class: Type[AbstractTgChatParser], upload_parser_result_function):
         """
@@ -94,5 +89,5 @@ class ParserLauncher:
 if __name__ == '__main__':
     logger.remove()
     logger.add(sys.stdout, format=THREAD_LOGGER_FORMAT)
-    p_l = ParserLauncher(DB_CONFIG)
+    p_l = ParserLauncher()
     asyncio.run(p_l.launch_all_parsers())

@@ -1,9 +1,7 @@
 import requests
 from bs4 import BeautifulSoup as bs, ResultSet
 from loguru import logger
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from src.dao import db_config
+from src.dao.db_config import get_db
 from src.dao.mentions_db import Chat, ChatContentType, MentionsDatabase
 from src.parsers.telegram.chat import TgChatAdChatParser
 
@@ -124,9 +122,5 @@ if __name__ == '__main__':
     cp.process_category('https://tgstat.ru/blogs', 300)
     cp.process_category('https://tgstat.ru/sport', 100)
     cp.process_category('https://tgstat.ru/food', 200)
-    engine = create_engine(db_config.DB_CONFIG.DB_URI, echo=False)
-    session = Session(bind=engine, autoflush=False)
-    db = MentionsDatabase(session)
-    db.upload_chat_ad_parser_results(cp.get_parsed_results())
-    engine.dispose()
-    session.close()
+    db = MentionsDatabase(next(get_db()))
+    db.upload_chat_ad_parser_result(cp.get_parsed_results())

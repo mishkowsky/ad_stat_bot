@@ -1,18 +1,15 @@
 import os
 from datetime import datetime
 from typing import Type
-
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import executor
 from loguru import logger
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from src.bot.keyboards import *
 from src.bot.keyboards import main_menu_keyboard, back_keyboard
 from src.bot.user_states import UserStates
-from src.dao.db_config import DB_CONFIG
+from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase, Chat, Post, SkuPerPost
 from src.dao.users_db import User, Request, RequestTypesEnum, RequestPlatformsEnum, UserDatabase
 
@@ -20,8 +17,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-engine = create_engine(DB_CONFIG.DB_URI, echo=False)
-session = Session(bind=engine)
+session = next(get_db())
 
 db = MentionsDatabase(session=session)
 user_db = UserDatabase(session)
@@ -227,9 +223,6 @@ def find_index_of_nearest_newline(end_index, text):
 async def on_shutdown(d: Dispatcher):
     await d.bot.close_bot()
     logger.info('bot closed')
-    session.close()
-    engine.dispose()
-    logger.info('session and engine closed')
 
 
 if __name__ == '__main__':

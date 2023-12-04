@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from loguru import logger
 from telethon.tl.types import MessageEntityTextUrl
+from telethon.tl.patched import Message
 from src.dao.mentions_db import ChatContentType
 from src.dao.mentions_db import Chat
 from src.parsers.telegram.abstract import AbstractTgChatParser
@@ -22,7 +23,7 @@ class TgChatAdChatParser(AbstractTgChatParser):
         super().__init__(session_id, tg_chats_to_parse, start_date)
         self.parsed_links: set[str] = set()
 
-    def parse_message(self, message) -> list[Chat]:
+    def parse_message(self, message: Message) -> list[Chat]:
         logger.debug(f'PARSING CHAT LINKS')
         links = set()
         for url_entity, inner_text in message.get_entities_text(MessageEntityTextUrl):
