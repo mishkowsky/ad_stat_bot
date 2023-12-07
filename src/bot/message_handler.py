@@ -97,7 +97,7 @@ async def handle_entered_sku(message: types.Message, state: FSMContext) -> None:
     await send_page_result(message.from_user.id, split_message(text), 1, state)
 
 
-def get_text_for_sku_response(sku: str, mentions: dict[Chat, dict[Post, list[Type[SkuPerPost]]]]) -> str:
+def get_text_for_sku_response(sku: str, mentions: dict[Chat, dict[Post, set[SkuPerPost]]]) -> str:
     mentions_count = 0
     text = ''
     for chat, posts in mentions.items():
@@ -157,7 +157,7 @@ async def handle_entered_brand(message: types.Message, state: FSMContext) -> Non
     await send_page_result(message.from_user.id, split_message(text), 1, state)
 
 
-def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: list[Type[SkuPerPost]]]]) -> str:
+def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: set[SkuPerPost]]]) -> str:
     mentions_count = 0
     text = ''
     for chat, posts in mentions.items():
@@ -172,7 +172,7 @@ def get_text_for_brand_response(brand: str, mentions: dict[Chat: dict[Post: list
     return text
 
 
-def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Type[SkuPerPost]]]) -> (str, int):
+def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: set[Type[SkuPerPost]]]) -> (str, int):
     text = ''
     sorted_posts = list(posts.keys())
     sorted_posts.sort(key=lambda p: p.date)
@@ -182,13 +182,15 @@ def get_mentions_list_text_for_chat(chat: Chat, posts: dict[Post: list[Type[SkuP
         mentions_count += len(mentions)
         text += f'\n<a href="t.me/c/{chat.tg_id}/{post.message_id}">Пост</a> от {post.date}:'
         if len(mentions) == 1:
-            sku_code = mentions[0].sku_code
+            sku_code = list(mentions)[0].sku_code
             text += f'\nАртикул: <a href="wb.ru/catalog/{sku_code}/detail.aspx">{sku_code}</a>.'
         else:
             text += f'\nАртикулы: '
+            i = -1
             for mention in mentions:
+                i += 1
                 sku_code = mention.sku_code
-                delimiter = '; ' if mention != mentions[-1] else '.'
+                delimiter = '; ' if i != len(mentions) - 1 else '.'
                 text += f'<a href="wb.ru/catalog/{sku_code}/detail.aspx">{sku_code}</a>{delimiter}'
     mentions_ending = 'е' if mentions_count == 1 else 'й'
     mentions_ending = 'я' if mentions_count in range(2, 5) else mentions_ending
@@ -281,7 +283,7 @@ async def prev_page_call(call: types.callback_query, state: FSMContext) -> None:
 
 
 @dp.callback_query_handler(lambda call: call.data == 'none')
-async def none_action(call: types.callback_query, state: FSMContext) -> None:
+async def none_action(call: types.callback_query, _) -> None:
     await bot.answer_callback_query(call.id)
 
 
