@@ -30,7 +30,9 @@ async def send_join_requests(client, tg_chats, session_id):
     joined_chats = []
     for tg_chat in tg_chats:
         link = tg_chat.link
-        logger.debug(f'LINK {link}')
+        # <editor-fold desc="log">
+        logger.debug(f'LINK {link}')  # pragma: no cover
+        # </editor-fold>
         hash_to_join, is_invite_link = parse_username(link)
         if is_invite_link:
             request = ImportChatInviteRequest(hash_to_join)
@@ -61,22 +63,28 @@ async def send_join_requests(client, tg_chats, session_id):
 async def send_join_request(client, request, invite_link):
     joined_chat = None
     try:
-        logger.debug(f'SENDING JOIN REQUEST USING {invite_link}')
+        # <editor-fold desc="log">
+        logger.debug(f'SENDING JOIN REQUEST USING {invite_link}')  # pragma: no cover
+        # </editor-fold>
         result = await make_request(client, request)
-        logger.debug('GOT RESULT')
+        # <editor-fold desc="log">
+        logger.debug('GOT RESULT')  # pragma: no cover
+        # </editor-fold>
         joined_chat = get_chat_from_result(result)
         if isinstance(joined_chat, Chat) or isinstance(joined_chat, Channel):
-            logger.debug(f'RETRIEVED CHAT {joined_chat.title} FROM {invite_link}')
+            # <editor-fold desc="log">
+            logger.debug(f'RETRIEVED CHAT {joined_chat.title} FROM {invite_link}')  # pragma: no cover
+            # </editor-fold>
     except UserAlreadyParticipantError:
         joined_chat = await client.get_entity(invite_link)
         # <editor-fold desc="log">
-        logger.debug(f'CHAT {joined_chat.title} WAS ALREADY JOINED BEFORE')
+        logger.debug(f'CHAT {joined_chat.title} WAS ALREADY JOINED BEFORE')  # pragma: no cover
         # </editor-fold>
     except FloodWaitError:
         raise
     except Exception as e:
         # <editor-fold desc="log">
-        logger.warning(f'SOME ERROR OCCURRED WHILE PROCESSING LINK {invite_link}: {e}')
+        logger.warning(f'SOME ERROR OCCURRED WHILE PROCESSING LINK {invite_link}: {e}')  # pragma: no cover
         # </editor-fold>
     return joined_chat
 
@@ -89,9 +97,13 @@ def get_chat_from_result(result):
                 joined_chat = chat_from_result
         if joined_chat is not None:
             if len(result.updates) > 0:
-                logger.debug(f'CHAT {joined_chat.title} WAS JOINED')
+                # <editor-fold desc="log">
+                logger.debug(f'CHAT {joined_chat.title} WAS JOINED')  # pragma: no cover
+                # </editor-fold>
             else:
-                logger.debug(f'CHAT {joined_chat.title} WAS ALREADY JOINED BEFORE')
+                # <editor-fold desc="log">
+                logger.debug(f'CHAT {joined_chat.title} WAS ALREADY JOINED BEFORE')  # pragma: no cover
+                # </editor-fold>
         else:
             logger.warning(f"COULDN'T GET JOINED CHAT FROM RESULT FOR LINK ")
     return joined_chat

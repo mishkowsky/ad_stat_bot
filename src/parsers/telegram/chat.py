@@ -68,7 +68,7 @@ class TgChatAdChatParser(AbstractTgChatParser):
 
     @dataclass
     class Result(AbstractTgChatParser.AbstractResult):
-        parsed_tg_chats: set
+        parsed_tg_chats: set[Chat]
 
         def merge_with(self, another_parser_result):
             super().merge_with(another_parser_result)
