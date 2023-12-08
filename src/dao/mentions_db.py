@@ -1,9 +1,8 @@
 import enum
 from datetime import datetime
-from typing import Type
 from loguru import logger
 from sqlalchemy import Column, DateTime, ForeignKey, Identity, Integer, String, text, MetaData, Enum, \
-    orm, Float, func, and_, Boolean
+    orm, Float, func, and_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base, relationship, Session
 from src.utils.wb_utils import get_brands_by_skus, BrandRec
@@ -11,8 +10,9 @@ from src.utils.wb_utils import get_brands_by_skus, BrandRec
 metadata_obj = MetaData(schema='mentions')
 Base = declarative_base(metadata=metadata_obj)
 
+
 # ORM of mentions schema
-# https://dbdiagram.io/d/parser_result_post-6508a60c02bd1c4a5ece5ba9
+# https://dbdiagram.io/d/parser_result_post-6508a60idc02bd1c4a5ece5ba9
 
 
 class Brand(Base):
@@ -53,11 +53,13 @@ class Chat(Base):
 
     post = relationship('Post', back_populates='chat')
 
-    def __init__(self, link=None, title=None, tg_id=None, followers=None, chat_content=None, updated_at=None,
+    def __init__(self, obj_id=None, link=None, title=None, tg_id=None, followers=None, chat_content=None,
+                 updated_at=None,
                  created_at=datetime.now(), session_id=None, update_required=False, recent_parsed_post_tg_id=None):
         super().__init__(
-            link=link, title=title, followers=followers, chat_content=chat_content, updated_at=updated_at,
+            id=obj_id, link=link, title=title, followers=followers, chat_content=chat_content, updated_at=updated_at,
             created_at=created_at, session_id=session_id, recent_parsed_post_tg_id=recent_parsed_post_tg_id)
+        self.id = obj_id
         self.tg_id = tg_id
         self.session_id = session_id
         self.title = title
@@ -74,7 +76,7 @@ class Chat(Base):
         self.update_required = False
 
     def __repr__(self):
-        return "<TgChatToParse(id='%s'; tg_id='%s'; title='%s' link='%s';)>" % \
+        return "<Chat(id='%s'; tg_id='%s'; title='%s'; link='%s')>" % \
             (self.id, self.tg_id, self.title, self.link)
 
     def __eq__(self, obj):
@@ -109,7 +111,7 @@ class Post(Base):
     sku_per_post = relationship('SkuPerPost', back_populates='post')
 
     def __repr__(self):
-        return "<TgPost(id='%s'; chat_id='%s'; msg_id='%s' date='%s')>" % \
+        return "<Post(id='%s'; chat_id='%s'; msg_id='%s'; date='%s')>" % \
             (self.id, self.chat_id, self.message_id, self.date)
 
     def __eq__(self, obj):
@@ -142,6 +144,11 @@ class Sku(Base):
         return "<Sku(id='%s'; sku_code='%s'; brand_id='%s')>" % \
             (self.id, self.sku_code, self.brand_id)
 
+    def __eq__(self, obj):
+        if not isinstance(obj, Sku):
+            return False
+        return obj.sku_code == self.sku_code
+
 
 class SkuPerPost(Base):
     __tablename__ = 'sku_per_post'
@@ -158,7 +165,19 @@ class SkuPerPost(Base):
         return "<SkuPerPost(id='%s'; post_id='%s'; sku_code='%s')>" % \
             (self.id, self.post_id, self.sku_code)
 
-      
+    def __eq__(self, obj):
+        if not isinstance(obj, SkuPerPost):
+            return False
+        return obj.post_id == self.post_id and obj.sku_code == self.sku_code
+
+    def __hash__(self):
+        if self.post_id is None:
+            post_id = self.post.id
+        else:
+            post_id = self.post_id
+        return hash((post_id, self.sku_code))
+
+
 class Proxy(Base):
     __tablename__ = 'proxies'
 
@@ -188,19 +207,19 @@ class Proxy(Base):
         :return: dict with proxy properties
         """
         return {
-            'proxy_type': 'http',       # (mandatory) protocol to use
-            'addr': self.host,          # (mandatory) proxy IP address
-            'port': self.http_port,     # (mandatory) proxy port number
+            'proxy_type': 'http',  # (mandatory) protocol to use
+            'addr': self.host,  # (mandatory) proxy IP address
+            'port': self.http_port,  # (mandatory) proxy port number
             'username': self.username,  # (optional) username if the proxy requires auth
             'password': self.password,  # (optional) password if the proxy requires auth
-            'rdns': True                # (optional) whether to use remote or local resolve, default remote
+            'rdns': True  # (optional) whether to use remote or local resolve, default remote
         }
 
     def __repr__(self):
         return "<Proxy(id='%s'; host='%s'; user='%s'; http='%s'; sock5='%s')>" % \
-            (self.id, self.host, self.username, self.http_port, self.sock5)
-      
-      
+            (self.id, self.host, self.username, self.http_port, self.sock5_port)
+
+
 class MentionsDatabase:
     """
    Class to interact with parsers_bd.top_blogger_bot_schema
@@ -209,14 +228,15 @@ class MentionsDatabase:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def get_chats_by_content_type(self, chat_content_type: ChatContentType) -> list[Type[Chat]]:
+    def get_chats_by_content_type(self, chat_content_type: ChatContentType) -> list[Chat]:
         """
         filter chats by content type
         :param chat_content_type: value to filter
         :return: collection of Chats
         """
-        result = self.session.query(Chat).filter(Chat.chat_content == chat_content_type).all()
-        return result
+        # result = self.session.query(Chat).filter(Chat.chat_content == chat_content_type).all()
+        result = self.session.execute(select(Chat).where(Chat.chat_content == chat_content_type)).scalars().all()
+        return list(result)
 
     def upload_wb_items_ad_parser_results(self, parser_result) -> None:
         """
@@ -255,17 +275,20 @@ class MentionsDatabase:
             logger.info(f'UPLOADED {uploaded_chats_counter} NEW CHATS')
 
     def get_mentions_by_sku(self, sku_code: int) -> \
-            dict[Chat, dict[Post, list[Type[SkuPerPost]]]]:
+            dict[Chat, dict[Post, set[SkuPerPost]]]:
         """
         method for obtaining a dictionary of mentions filtered by sku code
         :param sku_code: sku to filter
         :return: dict with mentions per posts per chats
         """
-        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code == sku_code).all()
-        return self.generate_mentions_dict(mentions)
+        # mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code == sku_code).all()
+        mentions = self.session.execute(
+            select(SkuPerPost).where(SkuPerPost.sku_code == sku_code)
+        ).scalars().all()
+        return self.generate_mentions_dict(set(mentions))
 
     def get_mentions_by_brand(self, brand_name: str) -> \
-            dict[Chat, dict[Post, list[Type[SkuPerPost]]]]:
+            dict[Chat, dict[Post, set[SkuPerPost]]]:
         """
         method for obtaining a dictionary of mentions filtered by brand name
         :param brand_name: string, case-insensitive
@@ -276,27 +299,30 @@ class MentionsDatabase:
             return {}
         brand_skus = self.session.query(Sku.sku_code).filter(Sku.brand_id == brand_id[0]).all()
         brand_skus_list = list(brand_sku[0] for brand_sku in brand_skus)
-        mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code.in_(brand_skus_list)).all()
-        return self.generate_mentions_dict(mentions)
+        # mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code.in_(brand_skus_list)).all()
+        mentions = self.session.execute(
+            select(SkuPerPost).where(SkuPerPost.sku_code.in_(brand_skus_list))
+        ).scalars().all()
+        return self.generate_mentions_dict(set(mentions))
 
-    def generate_mentions_dict(self, mentions: list[Type[SkuPerPost]]) -> \
-            dict[Chat, dict[Post, list[Type[SkuPerPost]]]]:
+    def generate_mentions_dict(self, mentions: set[SkuPerPost]) -> \
+            dict[Chat, dict[Post, set[SkuPerPost]]]:
         """
         creates dict from orm objects
         :param mentions: list of orm of SkuPerPost class
         :return: dict with mentions per posts per chats
         """
-        resulting_dict = dict()
+        resulting_dict = {}
         for mention in mentions:
             chat: Chat = mention.post.chat
             post: Post = mention.post
             if chat in resulting_dict.keys():
                 if post in resulting_dict[chat].keys():
-                    resulting_dict[chat][post].append(mention)
+                    resulting_dict[chat][post].add(mention)
                 else:
-                    resulting_dict[chat][post] = [mention]
+                    resulting_dict[chat][post] = {mention}
             else:
-                resulting_dict[chat] = {post: [mention]}
+                resulting_dict[chat] = {post: {mention}}
         return resulting_dict
 
     def update_tg_chat(self, tg_chat: Chat) -> None:
