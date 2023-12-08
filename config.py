@@ -1,4 +1,3 @@
-import json
 import os
 from dotenv import load_dotenv
 
@@ -6,6 +5,7 @@ load_dotenv()
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+TEST_LOGGER_LEVEL = 'OFF'
 LOGGER_LEVEL = 'DEBUG'
 LOG_FILES_FOLDER = 'logs'
 THREAD_LOGGER_FORMAT = '{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {thread.name} | ' \

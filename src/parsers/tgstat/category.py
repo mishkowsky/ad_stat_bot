@@ -1,8 +1,7 @@
 import requests
-from bs4 import BeautifulSoup as bs, ResultSet
+from bs4 import BeautifulSoup, ResultSet
 from loguru import logger
-from src.dao.db_config import get_db
-from src.dao.mentions_db import Chat, ChatContentType, MentionsDatabase
+from src.dao.mentions_db import Chat, ChatContentType
 from src.parsers.telegram.chat import TgChatAdChatParser
 
 
@@ -32,7 +31,7 @@ class CategoryParser:
         self.session = requests.Session()
         self.first_page_request = self.session.get(url, headers=headers_0)
 
-        soup = bs(self.first_page_request.content, features="html.parser")
+        soup = BeautifulSoup(self.first_page_request.content, features="html.parser")
         container = soup.find_all("div", {"class": "lm-list-container"})[0]
 
         hyperlinks = container.find_all('a', {'class': 'text-body'}, href=True)
@@ -75,7 +74,7 @@ class CategoryParser:
         result = self.session.get(f'{self.url}/items', headers=headers, data=data)
 
         json_response = result.json()
-        soup = bs(json_response['html'], features="html.parser")
+        soup = BeautifulSoup(json_response['html'], features="html.parser")
         has_next = json_response['hasMore']
         next_page = json_response['nextPage']
         next_offset = json_response['nextOffset']
@@ -100,7 +99,9 @@ class CategoryParser:
                 link = f't.me/{link[1:]}'
             else:
                 link = f't.me/+{link}'
+            # <editor-fold desc="log"> # pragma: no cover
             logger.info(f'#{self.chat_counter} title: {title}; link: {link}; followers: {followers}')
+            # </editor-fold>
 
             chat = Chat(link=link, chat_content=ChatContentType.wb_items_ads,
                         title=title, followers=followers, update_required=True)
@@ -116,11 +117,6 @@ class CategoryParser:
         return TgChatAdChatParser.Result([], self.parsed_chats)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     cp = CategoryParser()
-    cp.process_category('https://tgstat.ru/beauty', 600)
-    cp.process_category('https://tgstat.ru/blogs', 300)
-    cp.process_category('https://tgstat.ru/sport', 100)
-    cp.process_category('https://tgstat.ru/food', 200)
-    db = MentionsDatabase(next(get_db()))
-    db.upload_chat_ad_parser_result(cp.get_parsed_results())
+    cp.process_category('https://tgstat.ru/beauty', 5)
