@@ -4,7 +4,7 @@ import time
 import warnings
 from datetime import datetime, timedelta
 import requests
-from bs4 import BeautifulSoup as bs, ResultSet, PageElement
+from bs4 import BeautifulSoup, ResultSet, PageElement
 from loguru import logger
 from requests import JSONDecodeError
 from requests.exceptions import ProxyError
@@ -14,9 +14,8 @@ from src.dao.db_config import get_db
 from src.dao.mentions_db import SkuPerPost, Sku, Post, MentionsDatabase, Proxy, ChatContentType, Chat
 from src.parsers.tgstat.utils import get_tgstat_url, get_value_from_icon_element, \
     get_post_date_from_string, get_post_id, get_tgstat_csrk_from_cookie
-from src.parsers.tgstat.verify_mention import wb_link_pattern
 from src.utils import format_message_to_print, add_log_to_file_for_process, LinkSkuResolver
-from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern
+from src.utils.wb_utils import wb_sku_pattern, wb_size_pattern, wb_link_pattern
 
 
 class ChannelParser:
@@ -104,14 +103,16 @@ class ChannelParser:
                 self.total_processed_chat_count = self.total_processed_chat_count + 1
                 # <editor-fold desc="log info">
                 logger.info(f'PARSING #{self.total_processed_chat_count}/{len(chats)} '
-                            f'CHANNEL {chat.title} WITH URL: {chat.link}')
+                            f'CHANNEL {chat.title} WITH URL: {chat.link}')  # pragma: no cover
                 # </editor-fold>
                 self.process_chat(chat)
-                # <editor-fold desc="log stat">
-                logger.info(f'DONE PARSING CHANNEL {chat.title} WITH URL: {chat.link}')
+                # <editor-fold desc="log stat"> # pragma: no cover
+                logger.info(f'DONE PARSING CHANNEL {chat.title} WITH URL: {chat.link}')   # pragma: no cover
                 logger.info(f'PARSED AND LOADED TO DB {self.parsed_posts_count_from_channel} POSTS'
-                            f' WITH {self.parsed_mentions_count_from_chat} MENTIONS IN CURRENT CHANNEL')
-                logger.info(f'PROCESSED {self.processed_posts_count_from_channel} POSTS IN CURRENT CHANNEL')
+                            f' WITH {self.parsed_mentions_count_from_chat} '
+                            f'MENTIONS IN CURRENT CHANNEL')  # pragma: no cover
+                logger.info(f'PROCESSED {self.processed_posts_count_from_channel} '
+                            f'POSTS IN CURRENT CHANNEL')  # pragma: no cover
                 # </editor-fold>
             except Exception as e:
                 logger.error(f'ERROR OCCURRED {e}')
@@ -164,7 +165,7 @@ class ChannelParser:
             logger.error(f'ERROR OCCURRED {e}')
             pass
 
-        soup = bs(first_page_request.content, features="html.parser")
+        soup = BeautifulSoup(first_page_request.content, features="html.parser")
 
         tg_hash_pattern = re.compile(r'@?[A-Za-z_0-9\-]+$')
         match = tg_hash_pattern.findall(first_page_request.url)
@@ -236,7 +237,7 @@ class ChannelParser:
         if json_response is None:
             return
 
-        soup = bs(json_response['html'], features="html.parser")
+        soup = BeautifulSoup(json_response['html'], features="html.parser")
 
         posts = soup.find_all('div', {'class': 'post-container'})
         logger.debug(f'RECEIVED RESPONSE HAS {len(posts)} POSTS')
@@ -247,7 +248,10 @@ class ChannelParser:
         next_offset = json_response['nextOffset']
 
         if self.chat.update_required:
-            logger.debug(f'UPDATING TGCHAT {self.chat}; RPPID: {self.chat.recent_parsed_post_tg_id}')
+            # <editor-fold desc="log">
+            logger.debug(f'UPDATING TGCHAT {self.chat}; '
+                         f'RPPID: {self.chat.recent_parsed_post_tg_id}')   # pragma: no cover
+            # </editor-fold>
             self.database.update_tg_chat(self.chat)
 
         if has_next and self.earliest_post_date > self.start_date \
@@ -299,18 +303,20 @@ class ChannelParser:
         post_id = get_post_id(post)
 
         # <editor-fold desc="log big stat">
-        if datetime.now() - self.last_info_log_time > timedelta(minutes=3):
+        if datetime.now() - self.last_info_log_time > timedelta(minutes=3):  # pragma: no cover
             logger.info(f'PARSING #{self.total_processed_chat_count}/{len(self.chats)} CHANNEL {self.chat.title} '
-                        f'WITH URL: {self.url}')
-            logger.info(f'CURRENT POST: id: {post_id}; date: {date_str}; post_link: {self.url}/{post_id}')
+                        f'WITH URL: {self.url}')  # pragma: no cover
+            logger.info(f'CURRENT POST: id: {post_id}; date: {date_str}; '
+                        f'post_link: {self.url}/{post_id}')  # pragma: no cover
             logger.info(f'PARSED AND LOADED TO DB {self.parsed_posts_count_from_channel} POSTS'
-                        f' WITH {self.parsed_mentions_count_from_chat} MENTIONS IN CURRENT CHANNEL')
-            logger.info(f'PROCESSED {self.processed_posts_count_from_channel} POSTS IN CURRENT CHANNEL')
+                        f' WITH {self.parsed_mentions_count_from_chat} MENTIONS IN CURRENT CHANNEL')  # pragma: no cover
+            logger.info(f'PROCESSED {self.processed_posts_count_from_channel} '
+                        f'POSTS IN CURRENT CHANNEL')  # pragma: no cover
             logger.info(f'TOTAL PARSED AND LOADED TO DB {self.total_parsed_posts_count} POSTS '
-                        f'WITH {self.total_parsed_mentions_count} MENTIONS')
-            logger.info(f'TOTAL {self.total_processed_posts_count} POSTS PROCESSED')
-            logger.info(f'ELAPSED TIME: {datetime.now() - self.parser_start_time}')
-            self.last_info_log_time = datetime.now()
+                        f'WITH {self.total_parsed_mentions_count} MENTIONS')  # pragma: no cover
+            logger.info(f'TOTAL {self.total_processed_posts_count} POSTS PROCESSED')  # pragma: no cover
+            logger.info(f'ELAPSED TIME: {datetime.now() - self.parser_start_time}')  # pragma: no cover
+            self.last_info_log_time = datetime.now()  # pragma: no cover
         # </editor-fold>
 
         if post_date < self.earliest_post_date:
@@ -320,7 +326,7 @@ class ChannelParser:
         # <editor-fold desc="log debug">
         if datetime.now() - post_date < timedelta(hours=12):
             logger.debug(f'SKIPPING POST DATED FROM "{date_str}" '
-                         f'because {datetime.now()} - {post_date} = {datetime.now() - post_date}')
+                         f'because {datetime.now()} - {post_date} = {datetime.now() - post_date}')  # pragma: no cover
         # </editor-fold>
 
         self.recent_parsed_post_tg_id = post_id
@@ -337,8 +343,17 @@ class ChannelParser:
                 logger.debug('POST DOESNT HAVE TEXT => SKIPPING')
                 return None
             post_text = post_text_element.text
+
+            if post_text_element.parent.has_attr('class'):
+                if 'post-body-forwarded' in post_text_element.parent['class']:
+                    # <editor-fold desc="log">
+                    logger.debug(f'SKIPPING POST AS IT IS REPLY')  # pragma: no cover
+                    # </editor-fold>
+                    return None
+
             # <editor-fold desc="log debug">
-            logger.debug(f'PROCESSING POST DATED FROM {date_str}: {format_message_to_print(post_text)}')
+            logger.debug(f'PROCESSING POST DATED FROM {date_str}: '
+                         f'{format_message_to_print(post_text)}')  # pragma: no cover
             # </editor-fold>
             skus = LinkSkuResolver().get_skus_from_tgstat_post(post)
             wb_links = wb_link_pattern.findall(post_text)
@@ -373,8 +388,9 @@ class ChannelParser:
             err = (replies_count + reactions_count + comments_count) / views_count * 100
 
             # <editor-fold desc="log debug">
-            logger.debug(f'POST ID: {post_id}; VIEWS: {views_count}; SHARED: {shared_count}; '
-                         f'REPLIED: {replies_count}; COMMENTS: {comments_count}; REACTIONS: {reactions_count}')
+            logger.debug(f'POST ID: {post_id}; VIEWS: {views_count}; '
+                         f'SHARED: {shared_count}; REPLIED: {replies_count}; '
+                         f'COMMENTS: {comments_count}; REACTIONS: {reactions_count}')  # pragma: no cover
             # </editor-fold>
 
             post_entity = Post(message_id=str(post_id), chat_id=str(self.chat.id),
@@ -398,20 +414,26 @@ class ChannelParser:
             try:
                 return method(url, timeout=10, headers=self.headers, data=form_data)
             except ProxyError:
-                logger.warning('PROXY DISCONNECT')
+                # <editor-fold desc="log">
+                logger.warning('PROXY DISCONNECT')  # pragma: no cover
+                # </editor-fold>
                 time.sleep(30)
                 counter += 1
             except requests.exceptions.Timeout:
-                logger.warning('RESPONSE WASN\'T RECEIVED IN 10 SEC, RETRYING IN 15 SEC')
+                # <editor-fold desc="log">
+                logger.warning('RESPONSE WASN\'T RECEIVED IN 10 SEC, RETRYING IN 15 SEC')  # pragma: no cover
+                # </editor-fold>
                 time.sleep(15)
                 counter += 1
             except Exception as e:
-                logger.warning(f'UNEXPECTED ERROR {e} RETRYING IN 15 SEC')
+                # <editor-fold desc="log">
+                logger.warning(f'UNEXPECTED ERROR {e} RETRYING IN 15 SEC')  # pragma: no cover
+                # </editor-fold>
                 time.sleep(15)
                 counter += 1
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     database_ = MentionsDatabase(next(get_db()))
     proxy_ = database_.session.query(Proxy).first()[0]
     start_date_ = datetime.min

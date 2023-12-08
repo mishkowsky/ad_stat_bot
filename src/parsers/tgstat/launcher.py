@@ -55,5 +55,5 @@ def launch_many_parsers() -> None:
     logger.info('ALL PROCESSES ARE DONE')
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     launch_many_parsers()
