@@ -19,12 +19,12 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         self.parsed_tg_chats: set[Chat] = set()
         self.parsed_sku_db_instances: dict[int, Sku] = dict()
 
-    def parse_message(self, message: Message):
+    def parse_message(self, message: Message) -> set[Post]:
         parsed_tg_chats_from_message = super().parse_message(message)
         self.parsed_tg_chats = self.parsed_tg_chats.union(parsed_tg_chats_from_message)
 
         if message.fwd_from is not None:  # skip if message is reply
-            return
+            return set()
 
         skus = LinkSkuResolver().get_skus_from_telethon_message(message)
         wb_links = wb_link_pattern.findall(message.message)
@@ -90,7 +90,7 @@ class TgWbItemsAdChatParser(TgChatAdChatParser):
         """
         Wrapper for parser results
         """
-        parsed_posts: set[Chat]
+        parsed_posts: set[Post]
         parsed_skus: dict[int, Sku]
 
         def merge_with(self, another_parser_result) -> None:

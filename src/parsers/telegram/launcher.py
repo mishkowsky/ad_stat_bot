@@ -4,7 +4,8 @@ import threading
 from datetime import datetime, timedelta
 from typing import Type
 from loguru import logger
-from config import SESSIONS_FILE_PATH, SESSION_COUNT, API_IDS, API_HASHES, ROOT_DIR, THREAD_LOGGER_FORMAT
+from sqlalchemy import select
+from config import SESSIONS_FILE_PATH, SESSION_COUNT, API_IDS, API_HASHES, ROOT_DIR, THREAD_LOGGER_FORMAT, LOGGER_LEVEL
 from src.dao.db_config import get_db
 from src.dao.mentions_db import MentionsDatabase
 from src.dao.mentions_db import Proxy
@@ -18,10 +19,12 @@ class ParserLauncher:
 
     def __init__(self):
         thread_id = threading.get_native_id()
-        output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/' \
-                          f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
-        logger.debug(f'ADDING LOGGER TO {output_log_file}')
-        logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, filter=lambda record: record['thread'].id == thread_id)
+        if LOGGER_LEVEL != 'OFF':
+            output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/' \
+                              f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
+            logger.debug(f'ADDING LOGGER TO {output_log_file}')  # pragma: no cover
+            logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, level=LOGGER_LEVEL,
+                       filter=lambda record: record['thread'].id == thread_id)
         self.session = next(get_db())
         self.database = MentionsDatabase(self.session)
 
@@ -41,7 +44,7 @@ class ParserLauncher:
 
         parsers = []
         threads = []
-        proxies = self.database.session.query(Proxy).all()
+        proxies = self.database.session.execute(select(Proxy)).scalars().all()
         threads_count = min(SESSION_COUNT, len(proxies))
         logger.info(f'STARTING {threads_count} THREADS')
         chunks = list(divide_into_chunks(non_joined_tg_chats, threads_count))
@@ -86,7 +89,7 @@ class ParserLauncher:
         upload_parser_result_function(parser_results)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     logger.remove()
     logger.add(sys.stdout, format=THREAD_LOGGER_FORMAT)
     p_l = ParserLauncher()
