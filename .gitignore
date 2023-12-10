@@ -1,0 +1,9 @@
+venv
+.env
+.idea
+sessions
+logs
+.pytest_cache
+.coverage
+.coveragerc
+pyreverse
