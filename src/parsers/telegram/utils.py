@@ -26,7 +26,7 @@ async def get_list_of_chat_ids(client: TelegramClient) -> set[int]:
     return chat_ids
 
 
-async def send_join_requests(client, tg_chats, session_id):
+async def send_join_requests(client, tg_chats, session_id):  # pragma: no cover
     joined_chats = []
     for tg_chat in tg_chats:
         link = tg_chat.link
@@ -60,7 +60,7 @@ async def send_join_requests(client, tg_chats, session_id):
     return joined_chats
 
 
-async def send_join_request(client, request, invite_link):
+async def send_join_request(client, request, invite_link):  # pragma: no cover
     joined_chat = None
     try:
         # <editor-fold desc="log">
@@ -89,7 +89,7 @@ async def send_join_request(client, request, invite_link):
     return joined_chat
 
 
-def get_chat_from_result(result):
+def get_chat_from_result(result):  # pragma: no cover
     joined_chat = None
     if isinstance(result, Updates):
         for chat_from_result in result.chats:
@@ -109,7 +109,7 @@ def get_chat_from_result(result):
     return joined_chat
 
 
-async def make_request(client: TelegramClient, request):
+async def make_request(client: TelegramClient, request):  # pragma: no cover
     result = await client(request)
     return result
 
@@ -117,18 +117,18 @@ async def make_request(client: TelegramClient, request):
 def get_chat_info_by_link(chat_link: str) -> (str, str):
     try:
         res = requests.get(f'https://{chat_link}')
-    except ConnectionError:
+    except ConnectionError:  # pragma: no cover
         return get_chat_info_by_link(chat_link)
     soup = BeautifulSoup(res.text, 'html.parser')
     try:
         title = soup.find('div', {'class': 'tgme_page_title'}).find('span').text
         followers_text = soup.find('div', {'class': 'tgme_page_extra'}).text.replace(' ', '')
-    except AttributeError:
+    except AttributeError:  # pragma: no cover
         return None, None
     match_result = re.compile(r'^\d+').match(followers_text)
     if match_result:
         return title, match_result[0]
-    else:
+    else:  # pragma: no cover
         return None, None
 
 

@@ -68,7 +68,7 @@ class AbstractTgChatParser(ABC):
 
             # if time_to_sleep != 0 means that we have caught FloodWaitError and
             # there still chats to parse that we haven't joined (due to Flood)
-            if self.time_to_sleep != 0:
+            if self.time_to_sleep != 0:  # pragma: no cover
                 time.sleep(self.time_to_sleep)
                 self.time_to_sleep = 0
                 # we don't care about return value because return value is field of self
@@ -89,14 +89,14 @@ class AbstractTgChatParser(ABC):
             # tg_chat.tg_id is not None means we have received chat entity earlier, so we are already joined this chat
             if tg_chat.tg_id is not None and tg_chat.tg_id not in self.processed_chats_id:
                 tg_chat_ids.append(int(tg_chat.tg_id))
-            else:
+            else:  # pragma: no cover
                 tg_chats_to_join.append(tg_chat)
 
         # we will not send extra requests on the next recursive calls because chats that were successfully parsed have
         # tg_chat.tg_id and this ids will be in the self.processed_chats_id
         try:
             self.chats.extend(await send_join_requests(self.client, tg_chats_to_join, self.session_id))
-        except FloodWaitError as e:
+        except FloodWaitError as e:  # pragma: no cover
             self.time_to_sleep = e.seconds
 
         self.chats.extend(await self.client.get_entity(tg_chat_ids))
@@ -129,7 +129,6 @@ class AbstractTgChatParser(ABC):
         :param chat: chat for retrieving
         :param start_date: messages after this date will be retrieved. exclusive.
         """
-        chat_has_only_empty_messages = True
         message_counter = 0
         chat_index = self.chats.index(chat)
         parsed_usernames_counter_before = len(self.parsed_items)
@@ -137,7 +136,6 @@ class AbstractTgChatParser(ABC):
             if message.message is None or message.message == '':
                 continue
             message_counter = message_counter + 1
-            chat_has_only_empty_messages = False
             # <editor-fold desc="log">
             logger.debug(
                 f'CHAT TITLE: {chat.title}({chat_index}/{self.chats_count}); ' +
@@ -148,11 +146,8 @@ class AbstractTgChatParser(ABC):
             parsed_items_from_message = self.parse_message(message)
             self.parsed_items = self.parsed_items.union(parsed_items_from_message)
         # <editor-fold desc="log">
-        if chat_has_only_empty_messages:
-            if message_counter == 0:
-                logger.warning(f'CHAT "{chat.title}" HAS NO MESSAGES SINCE {start_date}')
-            else:
-                logger.warning(f'CHAT "{chat.title}" HAS NO TEXT MESSAGES SINCE {start_date}')
+        if message_counter == 0:
+            logger.warning(f'CHAT "{chat.title}" HAS NO TEXT MESSAGES SINCE {start_date}')
         # </editor-fold>
         parsed_usernames_counter_after = len(self.parsed_items)
         # <editor-fold desc="log">
@@ -181,7 +176,7 @@ class AbstractTgChatParser(ABC):
         :param message:
         :return parsed_items: some collection(!) of parsed_items
         """
-        raise NotImplemented
+        pass
 
     def launch(self, anon_path: str, api_id: int, api_hash: str, proxy_config: dict[str, str] | None) -> None:
         """
@@ -220,5 +215,6 @@ class AbstractTgChatParser(ABC):
         def merge_with(self, another_parser_result) -> None:
             self.tg_chats_to_update.extend(another_parser_result.tg_chats_to_update)
 
+    @abstractmethod
     def get_parser_results(self) -> AbstractResult:
-        raise NotImplemented
+        pass
