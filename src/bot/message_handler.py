@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import executor
+from aiogram.utils.exceptions import MessageNotModified
 from loguru import logger
 from src.bot.keyboards import *
 from src.bot.keyboards import main_menu_keyboard, back_keyboard
@@ -25,25 +26,31 @@ user_db = UserDatabase(session)
 CURRENT_PAGE_KEY = 'current_page'
 PAGES_COUNT_KEY = 'pages_count'
 REPLY_KEY = 'reply'
+LAST_MESSAGE_WITH_KEYBOARD_ID = 'last_message_with_keyboard_id'
 
 
 @dp.message_handler(commands="start", state="*")
 async def handle_start(message: types.Message, state: FSMContext) -> None:
-    await bot.send_message(message.from_user.id, text='👋 Привет!\n\n🔥 Я могу показать, в каких Telegram каналах твои '
-                                                      'конкуренты закупают рекламу!\n\n⬇️ Нажимай на кнопку ниже и '
-                                                      'вводи артикул! Я выведу все каналы, в которых этот '
-                                                      'артикул упоминался!',
-                           reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
+    message = await bot.send_message(message.from_user.id,
+                                     text='👋 Привет!\n\n🔥 Я могу показать, в каких Telegram каналах твои '
+                                          'конкуренты закупают рекламу!\n\n⬇️ Нажимай на кнопку ниже и '
+                                          'вводи артикул! Я выведу все каналы, в которых этот '
+                                          'артикул упоминался!',
+                                     reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
     user_db.check_user(User(user_id=str(message.from_user.id), username=message.from_user.username,
                             first_name=message.from_user.first_name, last_name=message.from_user.last_name,
                             created_at=datetime.now()))
+    await delete_keyboard_under_last_message(state, message.from_user.id)
     await state.finish()
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: message.message_id})
 
 
 @dp.message_handler()
-async def handle_plain_text(message: types.Message) -> None:
-    await bot.send_message(message.from_user.id, text='Пожалуйста, воспользуйтесь кнопками меню!',
-                           reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
+async def handle_plain_text(message: types.Message, state: FSMContext) -> None:
+    await delete_keyboard_under_last_message(state, message.from_user.id)
+    message = await bot.send_message(message.from_user.id, text='Пожалуйста, воспользуйтесь кнопками меню!',
+                                     reply_markup=main_menu_keyboard, parse_mode='html', disable_web_page_preview=True)
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: message.message_id})
 
 
 @dp.callback_query_handler(lambda call: call.data == "back_to_main_menu", state="*")
@@ -51,11 +58,13 @@ async def handle_back_to_main_menu(call: types.callback_query, state: FSMContext
     await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
                                 text=main_menu_text, reply_markup=main_menu_keyboard)
     await state.finish()
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: call.message.message_id})
 
 
 async def set_new_state(state_to_finish: FSMContext, state_to_set) -> None:
     await state_to_finish.finish()
     await state_to_set.set()
+
 
 check_sku_message = '✏️ <b>Отправь мне артикул</b>, по которому ты хочешь получить информацию.\n\n' \
                     'Я отправлю тебе список каналов, которые рекламировали данный товар!'
@@ -63,11 +72,12 @@ check_sku_message = '✏️ <b>Отправь мне артикул</b>, по к
 
 @dp.callback_query_handler(lambda call: call.data == "check_sku_res")
 async def check_sku_call(call: types.callback_query, state: FSMContext) -> None:
-    await bot.send_message(text=check_sku_message, chat_id=call.from_user.id,
-                           reply_markup=back_keyboard, parse_mode='html')
+    message = await bot.send_message(text=check_sku_message, chat_id=call.from_user.id,
+                                     reply_markup=back_keyboard, parse_mode='html')
     await bot.edit_message_reply_markup(message_id=call.message.message_id,
                                         chat_id=call.from_user.id, reply_markup=None)
     await set_new_state(state, UserStates.EnterSKU)
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: message.message_id})
 
 
 @dp.callback_query_handler(lambda call: call.data == "check_sku")
@@ -75,6 +85,7 @@ async def check_sku_call(call: types.callback_query, state: FSMContext) -> None:
     await bot.edit_message_text(text=check_sku_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
     await set_new_state(state, UserStates.EnterSKU)
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: call.message.message_id})
 
 
 @dp.message_handler(state=UserStates.EnterSKU)
@@ -88,6 +99,7 @@ async def handle_entered_sku(message: types.Message, state: FSMContext) -> None:
         await bot.send_message(message.from_user.id, text='Артикул должен быть числом.')
         await UserStates.EnterSKU.set()
         return
+    await delete_keyboard_under_last_message(state, message.from_user.id)
     mentions = db.get_mentions_by_sku(int(sku))
     if not mentions:
         text = f'Артикул <i>{sku}</i> не упоминался ни в одном канале.'
@@ -127,11 +139,12 @@ check_brand_message = '✏️ <b>Отправь мне наименование 
 
 @dp.callback_query_handler(lambda call: call.data == "check_brand_res")
 async def check_brand_call(call: types.callback_query, state: FSMContext) -> None:
-    await bot.send_message(text=check_brand_message, chat_id=call.from_user.id,
-                           reply_markup=back_keyboard, parse_mode='html')
+    message = await bot.send_message(text=check_brand_message, chat_id=call.from_user.id,
+                                     reply_markup=back_keyboard, parse_mode='html')
     await bot.edit_message_reply_markup(message_id=call.message.message_id,
                                         chat_id=call.from_user.id, reply_markup=None)
     await set_new_state(state, UserStates.EnterBrand)
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: message.message_id})
 
 
 @dp.callback_query_handler(lambda call: call.data == "check_brand")
@@ -139,6 +152,7 @@ async def check_brand_call(call: types.callback_query, state: FSMContext) -> Non
     await bot.edit_message_text(text=check_brand_message, message_id=call.message.message_id, chat_id=call.from_user.id,
                                 reply_markup=back_keyboard, parse_mode='html')
     await set_new_state(state, UserStates.EnterBrand)
+    await state.update_data({LAST_MESSAGE_WITH_KEYBOARD_ID: call.message.message_id})
 
 
 @dp.message_handler(state=UserStates.EnterBrand)
@@ -153,6 +167,7 @@ async def handle_entered_brand(message: types.Message, state: FSMContext) -> Non
         text = f'Ни один артикул бренда <i>{brand}</i> не упоминался ни в одном канале.'
     else:
         text = get_text_for_brand_response(brand, mentions)
+    await delete_keyboard_under_last_message(state, message.from_user.id)
     await state.finish()
     await send_page_result(message.from_user.id, split_message(text), 1, state)
 
@@ -243,13 +258,14 @@ def split_message(text: str) -> list[str]:
 
 async def send_page_result(user_id: int, splitted_text: list[str], page_to_send: int, state: FSMContext) -> None:
     pages_count = len(splitted_text)
+    keyboard = get_pagination_keyboard(1, pages_count)
+    message = await bot.send_message(user_id, text=splitted_text[page_to_send - 1], reply_markup=keyboard,
+                                     parse_mode='html', disable_web_page_preview=True)
     await state.set_data({
         CURRENT_PAGE_KEY: 1,
         REPLY_KEY: splitted_text,
+        LAST_MESSAGE_WITH_KEYBOARD_ID: message.message_id
     })
-    keyboard = get_pagination_keyboard(1, pages_count)
-    await bot.send_message(user_id, text=splitted_text[page_to_send - 1], reply_markup=keyboard, parse_mode='html',
-                           disable_web_page_preview=True)
 
 
 @dp.callback_query_handler(lambda call: call.data == 'go_to_next_page')
@@ -264,7 +280,7 @@ async def next_page_call(call: types.callback_query, state: FSMContext) -> None:
     await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
                                 text=splitted_text[page - 1], reply_markup=keyboard, parse_mode='html',
                                 disable_web_page_preview=True)
-    await state.update_data({CURRENT_PAGE_KEY: page})
+    await state.update_data({CURRENT_PAGE_KEY: page, LAST_MESSAGE_WITH_KEYBOARD_ID: call.message.message_id})
 
 
 @dp.callback_query_handler(lambda call: call.data == 'go_to_prev_page')
@@ -279,7 +295,7 @@ async def prev_page_call(call: types.callback_query, state: FSMContext) -> None:
     await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.message_id,
                                 text=splitted_text[page - 1], reply_markup=keyboard, parse_mode='html',
                                 disable_web_page_preview=True)
-    await state.update_data({CURRENT_PAGE_KEY: page})
+    await state.update_data({CURRENT_PAGE_KEY: page, LAST_MESSAGE_WITH_KEYBOARD_ID: call.message.message_id})
 
 
 @dp.callback_query_handler(lambda call: call.data == 'none')
@@ -291,6 +307,17 @@ def find_index_of_nearest_newline(end_index, text):
     while end_index > 0 and text[end_index] != '\n':
         end_index = end_index - 1
     return end_index
+
+
+async def delete_keyboard_under_last_message(state, chat_id):
+    data = await state.get_data()
+    try:
+        last_message_id = data[LAST_MESSAGE_WITH_KEYBOARD_ID]
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=last_message_id, reply_markup=None)
+    except KeyError:
+        pass
+    except MessageNotModified:
+        pass
 
 
 async def on_shutdown(d: Dispatcher):
