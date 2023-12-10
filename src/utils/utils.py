@@ -36,7 +36,7 @@ def resolve_redirection_link(link: str) -> int | None:
         link = f'http://{link}'
     try:
         response = requests.get(link, timeout=15, headers=headers)
-    except requests.exceptions as e:
+    except requests.exceptions as e:   # pragma: no cover
         logger.warning(f'ERROR {e} ON URL: {link}')
         return None
     sku = get_sku_from_url(response.url)

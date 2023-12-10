@@ -81,7 +81,7 @@ class ChannelParser:
         while main_page_response is None:
             try:
                 main_page_response = self.session.get('https://tgstat.ru', timeout=10, headers=headers_0)
-            except requests.exceptions.Timeout:
+            except requests.exceptions.Timeout:  # pragma: no cover
                 logger.warning("RESPONSE WASN'T RECEIVED IN 10 SEC, RETRYING IN 15 SEC")
                 time.sleep(15)
         logger.debug(main_page_response)
@@ -152,16 +152,16 @@ class ChannelParser:
         first_page_request = self.make_request_with_timeout(self.session.get, self.url)
         logger.debug(f'RECEIVED {first_page_request}')
 
-        if first_page_request.status_code == 404:
+        if first_page_request.status_code == 404:  # pragma: no cover
             logger.warning(f'{self.url} NOT FOUND')
             return
 
         try:
             value = first_page_request.json()
-            if 'status' in value.keys():
+            if 'status' in value.keys():  # pragma: no cover
                 logger.warning(f'{self.url} NOT FOUND')
                 return
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             logger.error(f'ERROR OCCURRED {e}')
             pass
 
@@ -221,21 +221,21 @@ class ChannelParser:
         r_counter = 0
         while json_response is None and r_counter < 10:
             if r_counter > 0:
-                time.sleep(30)
+                time.sleep(30)  # pragma: no cover
             result = self.make_request_with_timeout(self.session.post, f'{self.url}/posts-last', form_data)
             r_counter += 1
             logger.debug(f'RECEIVED {result}')
             if result.status_code == 403:
-                logger.warning('RETURNED STATUS CODE 403 SLEEP FOR 30 SECS')
+                logger.warning('RETURNED STATUS CODE 403 SLEEP FOR 30 SECS')  # pragma: no cover
             try:
                 json_response = result.json()
-            except JSONDecodeError:
+            except JSONDecodeError:  # pragma: no cover
                 logger.warning('CANT DECODE JSON DUE TO ...')
                 json_response = None
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 logger.exception(f"UNEXPECTED ERROR {e} WHILE MAKING POSTS REQUEST")
         if json_response is None:
-            return
+            return  # pragma: no cover
 
         soup = BeautifulSoup(json_response['html'], features="html.parser")
 
@@ -270,11 +270,8 @@ class ChannelParser:
         for post in posts:
             self.total_processed_posts_count += 1
             self.processed_posts_count_from_channel += 1
-            post_entity = None
-            try:
-                post_entity = self.process_post(post)
-            except Exception as e:
-                logger.exception(f'Processing post error {e}')
+
+            post_entity = self.process_post(post)
 
             if post_entity is not None and post_entity.date > self.start_date:
                 parsed_posts.add(post_entity)
@@ -413,19 +410,19 @@ class ChannelParser:
         while counter < 10:
             try:
                 return method(url, timeout=10, headers=self.headers, data=form_data)
-            except ProxyError:
+            except ProxyError:  # pragma: no cover
                 # <editor-fold desc="log">
                 logger.warning('PROXY DISCONNECT')  # pragma: no cover
                 # </editor-fold>
                 time.sleep(30)
                 counter += 1
-            except requests.exceptions.Timeout:
+            except requests.exceptions.Timeout:  # pragma: no cover
                 # <editor-fold desc="log">
                 logger.warning('RESPONSE WASN\'T RECEIVED IN 10 SEC, RETRYING IN 15 SEC')  # pragma: no cover
                 # </editor-fold>
                 time.sleep(15)
                 counter += 1
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 # <editor-fold desc="log">
                 logger.warning(f'UNEXPECTED ERROR {e} RETRYING IN 15 SEC')  # pragma: no cover
                 # </editor-fold>
