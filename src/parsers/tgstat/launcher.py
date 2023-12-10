@@ -33,7 +33,7 @@ def launch_many_parsers() -> None:
     """
     logger.remove()
     if LOGGER_LEVEL != 'OFF':
-        logger.add(sys.stdout, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL)
+        logger.add(sys.stdout, format=PROCESS_LOGGER_FORMAT, level=LOGGER_LEVEL)  # pragma: no cover
     add_log_to_file_for_process('ChannelParserLauncher')
 
     database = MentionsDatabase(next(get_db()))

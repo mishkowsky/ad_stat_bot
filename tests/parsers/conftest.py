@@ -68,7 +68,10 @@ def chats_test_objs(db_session) -> list[Chat]:
     :return: list of created chats
     """
     test_chats = [
-        Chat(link='t.me/+qC9nbDs1_N9iNzIy', tg_id='1944859703', followers=3, chat_content=ChatContentType.wb_items_ads)
+        Chat(link='t.me/+qC9nbDs1_N9iNzIy', session_id=1, tg_id='1944859703',
+             followers=3, chat_content=ChatContentType.wb_items_ads),
+        Chat(link='t.me/testingpublicchannel', recent_parsed_post_tg_id=6,
+             chat_content=ChatContentType.wb_items_ads)
     ]
     add_test_objs_to_db(db_session, test_chats)
     return test_chats
