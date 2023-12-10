@@ -35,7 +35,7 @@ def chat_test_objs(db_session) -> list[Chat]:
 
 
 @pytest.fixture(scope='function')
-def mentions_test_objs(chat_test_objs, db_session) -> set[SkuPerPost]:
+def mentions_test_objs(chat_test_objs, db_session) -> list[SkuPerPost]:
     """
     populates the database with test posts
     :param chat_test_objs:
@@ -72,7 +72,7 @@ def mentions_test_objs(chat_test_objs, db_session) -> set[SkuPerPost]:
     sku_per_post_5 = SkuPerPost(post=post_3, sku=sku_2)
     sku_per_post_6 = SkuPerPost(post=post_3, sku=sku_3)
 
-    mentions = {sku_per_post_1, sku_per_post_2, sku_per_post_3, sku_per_post_4, sku_per_post_5, sku_per_post_6}
+    mentions = [sku_per_post_1, sku_per_post_2, sku_per_post_3, sku_per_post_4, sku_per_post_5, sku_per_post_6]
 
     session.add_all(mentions)
     session.flush()
@@ -163,6 +163,12 @@ class TestSkuPerPost:
         not_sku_per_post = 1
         assert sku_per_post_1 == sku_per_post_2
         assert sku_per_post_2 != not_sku_per_post
+
+    def test_hash(self):
+        sku_per_post_1 = SkuPerPost(sku_code=1, post_id=1)
+        post = Post(id=1)
+        sku_per_post_2 = SkuPerPost(sku_code=1, post=post)
+        assert sku_per_post_1.__hash__() == sku_per_post_2.__hash__()
 
 
 class TestProxy:
@@ -309,7 +315,7 @@ class TestMentionsDatabase:
 
         mdb = MentionsDatabase(db_session())
 
-        sku_code = 10
+        sku_code = 11
 
         expected_mentions = set()
         for mention in mentions_test_objs:

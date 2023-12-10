@@ -234,7 +234,6 @@ class MentionsDatabase:
         :param chat_content_type: value to filter
         :return: collection of Chats
         """
-        # result = self.session.query(Chat).filter(Chat.chat_content == chat_content_type).all()
         result = self.session.execute(select(Chat).where(Chat.chat_content == chat_content_type)).scalars().all()
         return list(result)
 
@@ -281,7 +280,6 @@ class MentionsDatabase:
         :param sku_code: sku to filter
         :return: dict with mentions per posts per chats
         """
-        # mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code == sku_code).all()
         mentions = self.session.execute(
             select(SkuPerPost).where(SkuPerPost.sku_code == sku_code)
         ).scalars().all()
@@ -299,7 +297,6 @@ class MentionsDatabase:
             return {}
         brand_skus = self.session.query(Sku.sku_code).filter(Sku.brand_id == brand_id[0]).all()
         brand_skus_list = list(brand_sku[0] for brand_sku in brand_skus)
-        # mentions = self.session.query(SkuPerPost).filter(SkuPerPost.sku_code.in_(brand_skus_list)).all()
         mentions = self.session.execute(
             select(SkuPerPost).where(SkuPerPost.sku_code.in_(brand_skus_list))
         ).scalars().all()
@@ -378,14 +375,14 @@ class MentionsDatabase:
                     with self.session.begin_nested():
                         brand_from_db = Brand(brand_id=brand.brand_id, name=brand.name)
                         self.session.add(brand_from_db)
-                except IntegrityError:
+                except IntegrityError:  # pragma: no cover
                     pass
             sku.brand_id = brand.brand_id
             try:
                 with self.session.begin_nested():
                     self.session.add(sku)
                     self.session.flush()
-            except IntegrityError:
+            except IntegrityError:  # pragma: no cover
                 return 0
             return 1
         # if brand is not present in dict from wb api
