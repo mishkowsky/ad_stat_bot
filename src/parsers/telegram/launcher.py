@@ -19,10 +19,10 @@ class ParserLauncher:
 
     def __init__(self):
         thread_id = threading.get_native_id()
-        if LOGGER_LEVEL != 'OFF':
+        if LOGGER_LEVEL != 'OFF':  # pragma: no cover
             output_log_file = f'{ROOT_DIR}/logs/{self.__class__.__name__}/' \
                               f'{datetime.now().strftime("%d.%m.%Y_%H.%M")}/log.txt'
-            logger.debug(f'ADDING LOGGER TO {output_log_file}')  # pragma: no cover
+            logger.debug(f'ADDING LOGGER TO {output_log_file}')
             logger.add(output_log_file, format=THREAD_LOGGER_FORMAT, level=LOGGER_LEVEL,
                        filter=lambda record: record['thread'].id == thread_id)
         self.session = next(get_db())
