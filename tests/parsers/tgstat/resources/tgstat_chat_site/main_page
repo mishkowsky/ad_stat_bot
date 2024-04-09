@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru" class="  site-ru">
+<body class="" data-layout="topnav" data-layout-config='{"layoutBoxed":false,"darkMode":false,"showRightSidebarOnStart": true}'>
+	<div class="wrapper">
+		<div class="content-page d-flex flex-column p-0">
+			<div class="container-fluid px-2 px-md-3">
+				<div class="row justify-content-md-center">
+					<div class="col-12 col-md-7 col-lg-6 mb-3 order-last order-md-first">
+						<div id="sticky-center-column" class="sticky-center-column">
+							<div id="posts-lists-container">
+								<form id="posts-list-form" class="lm-form" action="/channel/@testingpublicchannel/posts-last" method="POST" autocomplete="off">
+									<input type="hidden" name="_tgstat_csrk" value="JQ9Y8l1DQMaczevA74Uc8YccG3uevdAZVt9E48v1Lal8ZDOlCxIKhOySm4Xc7C3DzXVqAabbtX4RnRGxk7Fowg==">
+									<div class="posts-list lm-list-container">
+										<div id="post-45622942678" class="card card-body border p-2 px-1 px-sm-3 post-container  ">
+											<div class="post-header">
+												<div class="row">
+													<div class="col col-12 pr-0">
+														<div class="media pb-1">
+															<div class="mr-2">
+																<a href="https://tgstat.ru/channel/@testingpublicchannel">
+																	<div class='rounded' style='width:32px; height:32px;'>
+																		<div class='position-relative' style='padding-top: 100%;'>
+																		    <span class='position-absolute avatar-title bg-info rounded text-uppercase text-white' style='top: 0;'>
+                                                                                TP
+                                                                            </span>
+                                                                        </div>
+																	</div>
+																</a>
+															</div>
+															<div class="media-body text-truncate">
+																<h5 class="m-0">
+                                                                    <a href="https://tgstat.ru/channel/@testingpublicchannel" class="text-dark">
+                                                                        Test Public Channel
+                                                                    </a>
+                                                                </h5>
+																<p class="text-muted m-0"> <small>9 Dec, 17:45</small> </p>
+															</div>
+															<div class="dropdown mt-1 mr-2 mr-sm-0 float-right text-muted">
+																<a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false"> <i class="uil-ellipsis-v"></i> </a>
+																<div class="dropdown-menu dropdown-menu-right">
+																	<a href="https://ttttt.me/testingpublicchannel/7" target="_blank" class="dropdown-item px-2"> <i class="uil-message mr-1 text-dark"></i> Открыть в Telegram </a>
+																	<a class="dropdown-item popup_ajax px-2" href="/channel/@testingpublicchannel/7/share" data-src="/channel/@testingpublicchannel/7/share"> <i class="uil-share-alt mr-1 text-dark"></i> Поделиться </a>
+																	<a class="dropdown-item popup_ajax px-2" href="#" data-src="/channel/@testingpublicchannel/7/abuse"> <i class="uil-exclamation-octagon mr-1 text-dark"></i> Пожаловаться </a>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+												<div class="col col-6">
+												    <h2 class="mb-1 text-dark">3</h2>
+												    <div class="text-uppercase font-12"> подписчиков </div>
+											    </div>
+												<hr class="m-0"> </div>
+											<div class="row my-2">
+												<div class="col col-12">
+													<div class="post-body
+                                                                isPhoto                                                                                                                                " data-popup-exception="a,button,.wrapper-video,.isPopup,.slick-dots">
+														<div class="">
+															<div class="indent-for-blocks ">
+																<div class="post-img-placeholder-wrapper">
+																	<div class="post-img-placeholder"></div>
+																</div>
+																<div class="post-text">
+																	</b>
+																	</i>
+																	</b>
+																	</i>
+																</div>
+																<div class="post-text">
+																	</b>
+																	</i>
+																	</b>
+																	</i>
+																</div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+											<hr class="m-0 mb-2">
+											<div class="row">
+												<div class="col col-12 d-flex">
+													<a class="btn btn-light btn-rounded py-05 px-13 mr-1 popup_ajax font-12 font-sm-13" role="button" data-src="/channel/@testingpublicchannel/7/stat" href="/channel/@testingpublicchannel/7/stat" title="" data-toggle="tooltip" data-placement="top" data-original-title="Количество просмотров публикации"><i class="uil-eye"></i>1 </a>
+													<a class="btn btn-light btn-rounded py-05 px-13 mr-1 popup_ajax font-12 font-sm-13" role="button" data-src="/channel/@testingpublicchannel/7/quotes" href="/channel/@testingpublicchannel/7/quotes" title="" data-toggle="tooltip" data-placement="top" data-original-title="Поделились в публичных каналах и чатах"><i class="uil-share-alt"></i>0 </a> <span class="btn btn-light btn-rounded py-05 px-13 mr-1 font-12 font-sm-13" role="button" title="" data-toggle="tooltip" data-placement="top" data-original-title="Пересылок всего">
+                                                    <i class="uil-corner-up-right"></i>0                </span>
+													<div class="ml-auto">
+														<a class="btn btn-light btn-rounded p-05 popup_ajax font-12 font-sm-13 d-sm-inline" role="button" data-src="/channel/@testingpublicchannel/7" href="/channel/@testingpublicchannel/7" title="" data-toggle="tooltip" data-placement="top" data-original-title="Постоянная ссылка на публикацию"> <span class="uil-link-alt"></span> </a>
+													</div>
+													<div class="clearfix"></div>
+												</div>
+											</div>
+										</div>
+                                        <div id="post-45617634181" class="card card-body border p-2 px-1 px-sm-3 post-container  ">
+                                            <div class="post-header">
+                                                <div class="row">
+                                                    <div class="col col-12 pr-0">
+                                                        <div class="media pb-1">
+                                                            <div class="mr-2">
+                                                                <a href="https://tgstat.ru/channel/S7WqL3jH49s1OTA6"> <img src="//static8.tgstat.ru/channels/_50/63/633346c7a440aa602bf13721c047c50d.jpg" class="rounded" style="width:32px; height:32px;"> </a>
+                                                            </div>
+                                                            <div class="media-body text-truncate">
+                                                                <h5 class="m-0">
+                                                                    <a href="https://tgstat.ru/channel/S7WqL3jH49s1OTA6" class="text-dark">
+                                                                        Находки с Wildberries                            </a>
+                                                                </h5>
+                                                                <p class="text-muted m-0"> <small>9 Dec 2019, 15:29</small> </p>
+                                                            </div>
+                                                            <div class="dropdown mt-1 mr-2 mr-sm-0 float-right text-muted">
+                                                                <a href="#" class="dropdown-toggle arrow-none card-drop" data-toggle="dropdown" aria-expanded="false"> <i class="uil-ellipsis-v"></i> </a>
+                                                                <div class="dropdown-menu dropdown-menu-right">
+                                                                    <a href="https://ttttt.me/testingpublicchannel/8" target="_blank" class="dropdown-item px-2"> <i class="uil-message mr-1 text-dark"></i> Открыть в Telegram </a>
+                                                                    <a class="dropdown-item popup_ajax px-2" href="/channel/S7WqL3jH49s1OTA6/8/share" data-src="/channel/S7WqL3jH49s1OTA6/8/share"> <i class="uil-share-alt mr-1 text-dark"></i> Поделиться </a>
+                                                                    <a class="dropdown-item popup_ajax px-2" href="#" data-src="/channel/S7WqL3jH49s1OTA6/8/abuse"> <i class="uil-exclamation-octagon mr-1 text-dark"></i> Пожаловаться </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <hr class="m-0"> </div>
+                                            <div class="row my-2">
+                                                <div class="col col-12">
+                                                    <div class="post-body
+                                                                                                        isPhoto                                                                                                                                " data-popup-exception="a,button,.wrapper-video,.isPopup,.slick-dots">
+                                                        <div class="">
+                                                            <div class="indent-for-blocks ">
+                                                                <div class="post-grouped-container">
+                                                                    <div id="carousel-45617634181" class="carousel slide pointer-event" data-ride="carousel" data-interval="false">
+                                                                        <div class="carousel-indicators-wrapper">
+                                                                            <ol class="carousel-indicators px-2 mx-0 rounded">
+                                                                                <li data-target="#carousel-45617634181" data-slide-to="0"></li>
+                                                                                <li data-target="#carousel-45617634181" data-slide-to="1"></li>
+                                                                            </ol>
+                                                                        </div>
+                                                                        <div class="carousel-inner" role="listbox">
+                                                                            <div class="carousel-item active">
+                                                                                <div class="post-grouped">
+                                                                                    <div class="post-img">
+                                                                                        <div class="post-img-substrate css-filter-1" style="background-image: url('https://static25.tgcnt.ru/posts/_0/f6/f65eebb20db98de17d94e2e6b4668fdb.jpg')"></div> <img class="post-img-img" src="https://static25.tgcnt.ru/posts/_0/f6/f65eebb20db98de17d94e2e6b4668fdb.jpg"> </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="carousel-item ">
+                                                                                <div class="post-grouped">
+                                                                                    <div class="post-img">
+                                                                                        <div class="post-img-substrate css-filter-1" style="background-image: url('https://static26.tgcnt.ru/posts/_0/89/89e264090802f0ac28545dc55f5c90a4.jpg')"></div> <img class="post-img-img" src="https://static26.tgcnt.ru/posts/_0/89/89e264090802f0ac28545dc55f5c90a4.jpg"> </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <a class="carousel-control-prev" href="#carousel-45617634181" role="button" data-slide="prev"> <span class="carousel-control-wrap-icon d-flex justify-content-center align-items-center rounded-circle">
+                                                                                <span class="uil uil-angle-left font-24 carousel-control-wrap-icon--prev" aria-hidden="true"></span> </span> <span class="sr-only">Prev</span> </a>
+                                                                        <a class="carousel-control-next" href="#carousel-45617634181" role="button" data-slide="next"> <span class="carousel-control-wrap-icon d-flex justify-content-center align-items-center rounded-circle">
+                                                                                <span class="uil uil-angle-right font-24 carousel-control-wrap-icon--next" aria-hidden="true"></span> </span> <span class="sr-only">Next</span> </a>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="post-text"><b>Милая пижама с шортиками </b></a>🍒
+                                                                    <br>🤍<i>Пижама оверсайз, имеет прямой крой, она невероятно удобна и подойдет на любой тип фигуры<br></i><i>🤍</i><i>свободные шорты не стесняют движений, а мягкая резинка на поясе обеспечивает плотную посадку, но не передавливает живот<br></i><i>🤍</i><i>в составе 100% хлопка, она легкая и очень дышащая <br><br>Арт; </i><i><br></i>🤑 https://www.wildberries.ru/catalog/123456/detail.aspx</div>
+                                                                <div class="post-text"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr class="m-0 mb-2">
+                                            <div class="row">
+                                                <div class="col col-12 d-flex">
+                                                    <a class="btn btn-light btn-rounded py-05 px-13 mr-1 popup_ajax font-12 font-sm-13" role="button" data-src="/channel/S7WqL3jH49s1OTA6/8/stat" href="/channel/S7WqL3jH49s1OTA6/8/stat" title="" data-toggle="tooltip" data-placement="top" data-original-title="Количество просмотров публикации"><i class="uil-eye"></i>2k </a>
+                                                    <a class="btn btn-light btn-rounded py-05 px-13 mr-1 popup_ajax font-12 font-sm-13" role="button" data-src="/channel/S7WqL3jH49s1OTA6/8/quotes" href="/channel/S7WqL3jH49s1OTA6/8/quotes" title="" data-toggle="tooltip" data-placement="top" data-original-title="Поделились в публичных каналах и чатах"><i class="uil-share-alt"></i>2 </a>
+                                                    <span class="btn btn-light btn-rounded py-05 px-13 mr-1 font-12 font-sm-13" role="button" title="" data-toggle="tooltip" data-placement="top" data-original-title="Пересылок всего"><i class="uil-corner-up-right"></i>7                </span>
+                                                    <span class="btn btn-light btn-rounded py-05 px-13 mr-1 font-12 font-sm-13" role="button" title="" data-toggle="tooltip" data-placement="top" data-original-title="Количество комментариев к публикации"><i class="uil-comments-alt"></i>2                    </span>
+                                                    <span class="btn btn-light btn-rounded py-05 px-13 mr-1 font-12 font-sm-13" role="button" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Количество реакций к публикации<div class='row mt-2'>
+                                                                <div class='col-5'><div class='text-left'>❤️‍🔥 - 14</div>
+                                                                <div class='text-left'>🔥 - 6</div><div class='text-left'>😍 - 3</div></div>
+                                                                <div class='col-6'><div class='text-left'>❤️ - 1</div>
+                                                                <div class='text-left'>🎄 - 1</div></div></div>" data-trigger="click"><i class="uil-thumbs-up"></i>25                    </span>
+                                                    <div class="ml-auto">
+                                                        <a class="btn btn-light btn-rounded p-05 popup_ajax font-12 font-sm-13 d-sm-inline" role="button" data-src="/channel/S7WqL3jH49s1OTA6/8" href="/channel/S7WqL3jH49s1OTA6/8" title="" data-toggle="tooltip" data-placement="top" data-original-title="Постоянная ссылка на публикацию"> <span class="uil-link-alt"></span> </a>
+                                                    </div>
+                                                    <div class="clearfix"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+									</div>
+									<div class="card card-body border lm-controls-container text-center text-dark mt-2 mb-0">
+										<div class="lm-info-container"> Показано <strong class='lm-current-loaded'>1</strong> последних публикаций. </div>
+
+										<div class="clearfix"></div>
+									</div>
+									<input type="hidden" class="lm-page" name="page" value="7">
+									<input type="hidden" class="lm-offset" name="offset" value="1"> </form>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="dark">
+		</div>
+	</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru" class="  site-ru">
+<body class="" data-layout="topnav" data-layout-config='{"layoutBoxed":false,"darkMode":false,"showRightSidebarOnStart": true}'>
+	<div class="wrapper">
+		<div class="content-page d-flex flex-column p-0">
+			<div class="content p-0 col">
+				<div class="container-fluid px-2 px-md-3">
+					<div class="mb-3 mt-5" id="category-items-list-container">
+						<form id="category-list-form" class="lm-form" action="/beauty/items" method="POST" autocomplete="off">
+							<input type="hidden" name="_tgstat_csrk" value="at6uek6XjO9fz7-agmO-UP5M1uEGgPGgLoAfRLh1aTslmvwuLNzuiiunjsyxO8ghriK8h0e3uPQZzVU83jQafA==">
+							<div class="row justify-content-center lm-list-container">
+								<div class="col-12 col-sm-6 col-md-4">
+									<div class="card card-body peer-item-box py-2 mb-2 mb-sm-3 border border-info-hover position-relative"> <a class="js-btn-favorite favorite-btn favorite-btn-top popup_ajax " href="#" data-src="/my/favorites/QBJtwNE7IpI3NTgy/create" data-id="16159091"><i class='fav-icon'  title="" data-toggle="tooltip" data-placement="top" data-original-title="Добавить в Избранное" data-original-title-inactive='Добавить в Избранное' data-original-title-active='В Избранном' ></i></a>
+										<a href="https://tgstat.ru/channel/QBJtwNE7IpI3NTgy" class="text-body">
+											<div class="row">
+												<div class="col">
+													<div>
+														<div class="font-16 text-dark text-truncate">Нашла на Wildberries</div>
+														<div class="font-14 text-muted line-clamp-2 mt-1" style="min-height: 42px;"> самые стильные и классные вещи с wildberries </div>
+													</div>
+													<div class="mt-2">
+														<div class="font-12 text-truncate"> <b>630 670</b> подписчиков </div>
+													</div>
+												</div>
+												<div class="col-auto mr-n2 d-flex justify-content-end">
+													<div class="d-flex align-items-start flex-column">
+														<div class="mb-auto"> <img src='//static9.tgstat.ru/channels/_100/6c/6cc13cace56eb951c64628dce7ea8c1b.jpg' class='img-thumbnail rounded-circle inline-block' style='width:70px; height:70px;' /> </div>
+														<div class="w-100">
+															<div class="text-center text-muted font-12" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Последняя публикация в канале: &lt;br&gt;4 часа назад" data-trigger="click"> 4 часа </div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</a>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md-4">
+									<div class="card card-body peer-item-box py-2 mb-2 mb-sm-3 border border-info-hover position-relative"> <a class="js-btn-favorite favorite-btn favorite-btn-top popup_ajax " href="#" data-src="/my/favorites/@podborchik_wb/create" data-id="17257711"><i class='fav-icon'  title="" data-toggle="tooltip" data-placement="top" data-original-title="Добавить в Избранное" data-original-title-inactive='Добавить в Избранное' data-original-title-active='В Избранном' ></i></a>
+										<a href="https://tgstat.ru/channel/@podborchik_wb" class="text-body">
+											<div class="row">
+												<div class="col">
+													<div>
+														<div class="font-16 text-dark text-truncate">Находки WB для девушек</div>
+														<div class="font-14 text-muted line-clamp-2 mt-1" style="min-height: 42px;"> ️Ваша экономия - наша забота!️ </div>
+													</div>
+													<div class="mt-2">
+														<div class="font-12 text-truncate"> <b>503 574</b> подписчиков </div>
+													</div>
+												</div>
+												<div class="col-auto mr-n2 d-flex justify-content-end">
+													<div class="d-flex align-items-start flex-column">
+														<div class="mb-auto"> <img src='//static10.tgstat.ru/channels/_100/cb/cb0c385c930dce92d6b7b10afe4bc79e.jpg' class='img-thumbnail rounded-circle inline-block' style='width:70px; height:70px;' /> </div>
+														<div class="w-100">
+															<div class="text-center text-muted font-12" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Последняя публикация в канале: &lt;br&gt;9 часов назад" data-trigger="click"> 9 часов </div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</a>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md-4">
+									<div class="card card-body peer-item-box py-2 mb-2 mb-sm-3 border border-info-hover position-relative"> <a class="js-btn-favorite favorite-btn favorite-btn-top popup_ajax " href="#" data-src="/my/favorites/ZkaaiAghVXxjNzRi/create" data-id="15472577"><i class='fav-icon'  title="" data-toggle="tooltip" data-placement="top" data-original-title="Добавить в Избранное" data-original-title-inactive='Добавить в Избранное' data-original-title-active='В Избранном' ></i></a>
+										<a href="https://tgstat.ru/channel/ZkaaiAghVXxjNzRi" class="text-body">
+											<div class="row">
+												<div class="col">
+													<div>
+														<div class="font-16 text-dark text-truncate">Маникюр | Ногти</div>
+														<div class="font-14 text-muted line-clamp-2 mt-1" style="min-height: 42px;"> Мы делимся лучшими идеями и новыми трендами маникюра </div>
+													</div>
+													<div class="mt-2">
+														<div class="font-12 text-truncate"> <b>495 109</b> подписчиков </div>
+													</div>
+												</div>
+												<div class="col-auto mr-n2 d-flex justify-content-end">
+													<div class="d-flex align-items-start flex-column">
+														<div class="mb-auto"> <img src='//static4.tgstat.ru/channels/_100/8c/8c9e84a944996586597756d86f3cdc60.jpg' class='img-thumbnail rounded-circle inline-block' style='width:70px; height:70px;' /> </div>
+														<div class="w-100">
+															<div class="text-center text-muted font-12" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Последняя публикация в канале: &lt;br&gt;2 часа назад" data-trigger="click"> 2 часа </div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</a>
+									</div>
+								</div>
+								<div class="col-12 col-sm-6 col-md-4">
+									<div class="card card-body peer-item-box py-2 mb-2 mb-sm-3 border border-info-hover position-relative"> <a class="js-btn-favorite favorite-btn favorite-btn-top popup_ajax " href="#" data-src="/my/favorites/eCABAk458q43OGZi/create" data-id="17721391"><i class='fav-icon'  title="" data-toggle="tooltip" data-placement="top" data-original-title="Добавить в Избранное" data-original-title-inactive='Добавить в Избранное' data-original-title-active='В Избранном' ></i></a>
+										<a href="https://tgstat.ru/channel/eCABAk458q43OGZi" class="text-body">
+											<div class="row">
+												<div class="col">
+													<div>
+														<div class="font-16 text-dark text-truncate">ШМОТКИ С ВБ 🎀🤍НОВОГОДНЯЯ РАСПРОДАЖА 🔥</div>
+														<div class="font-14 text-muted line-clamp-2 mt-1" style="min-height: 42px;"> ️По заказам: @diyana_ryabinena </div>
+													</div>
+													<div class="mt-2">
+														<div class="font-12 text-truncate"> <b>468 513</b> подписчиков </div>
+													</div>
+												</div>
+												<div class="col-auto mr-n2 d-flex justify-content-end">
+													<div class="d-flex align-items-start flex-column">
+														<div class="mb-auto"> <img src='//static1.tgstat.ru/channels/_100/c1/c1e31f5e2745101e4da82881e93f522b.jpg' class='img-thumbnail rounded-circle inline-block' style='width:70px; height:70px;' /> </div>
+														<div class="w-100">
+															<div class="text-center text-muted font-12" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Последняя публикация в канале: &lt;br&gt;59 мин. назад" data-trigger="click"> 59 мин. </div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</a>
+									</div>
+								</div>
+							</div>
+							<div class="d-flex justify-content-center">
+								<div class="lm-button-container mt-2">
+									<button class="btn btn-light border lm-button py-1 min-width-220px" type="button"> Показать больше </button> <span class="lm-loader d-none spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span> </div>
+							</div>
+							<input type="hidden" class="lm-page" name="page" value="1">
+							<input type="hidden" class="lm-offset" name="offset" value="0"> </form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

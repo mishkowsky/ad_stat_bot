@@ -1,0 +1,25 @@
+<div class="col-12 col-sm-6 col-md-4">
+	<div class="card card-body peer-item-box py-2 mb-2 mb-sm-3 border border-info-hover position-relative"> <a class="js-btn-favorite favorite-btn favorite-btn-top popup_ajax " href="#" data-src="/my/favorites/K3_SxwIGn0wzZTli/create" data-id="14011739"><i class='fav-icon'  title="" data-toggle="tooltip" data-placement="top" data-original-title="Добавить в Избранное" data-original-title-inactive='Добавить в Избранное' data-original-title-active='В Избранном' ></i></a>
+		<a href="https://tgstat.ru/channel/K3_SxwIGn0wzZTli" class="text-body">
+			<div class="row">
+				<div class="col">
+					<div>
+						<div class="font-16 text-dark text-truncate">Поговорим о маникюре 💅🏻</div>
+						<div class="font-14 text-muted line-clamp-2 mt-1" style="min-height: 42px;"> Все твои подружки уже подписаны </div>
+					</div>
+					<div class="mt-2">
+						<div class="font-12 text-truncate"> <b>73 690</b> подписчиков </div>
+					</div>
+				</div>
+				<div class="col-auto mr-n2 d-flex justify-content-end">
+					<div class="d-flex align-items-start flex-column">
+						<div class="mb-auto"> <img src='//static3.tgstat.ru/channels/_100/db/db23c73bbbcde011ac2bd8d721b77bba.jpg' class='img-thumbnail rounded-circle inline-block' style='width:70px; height:70px;' /> </div>
+						<div class="w-100">
+							<div class="text-center text-muted font-12" title="" data-toggle="tooltip" data-html="true" data-placement="top" data-original-title="Последняя публикация в канале: &lt;br&gt;79 мин. назад" data-trigger="click"> 79 мин. </div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</a>
+	</div>
+</div>
